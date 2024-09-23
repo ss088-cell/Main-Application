@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f7f6;
+      padding: 20px;
+    }
+    h1 {
+      color: #4CAF50;
+    }
+    select, button {
+      font-size: 16px;
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+    }
+    #apiResponse {
+      margin-top: 20px;
+      color: blue;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Select an Application</h1>
+  
+  <label for="appDropdown">Application:</label>
+  <select id="appDropdown">
+    <!-- Options will be loaded dynamically -->
+  </select>
+
+  <button id="generateReportButton" onclick="generateReport()">Generate Report</button>
+
+  <div id="apiResponse">API Response: <span id="responseContent">None</span></div>
+
+  <script>
+    // Function to load applications into the dropdown
+    function loadApplications() {
+      console.log("Fetching applications from server...");
+      
+      google.script.run.withSuccessHandler(function(applications) {
+        let dropdown = document.getElementById('appDropdown');
+        
+        if (applications.length === 0) {
+          console.error("No applications found! Check Google Sheet.");
+        }
+        
+        applications.forEach(function(app) {
+          let option = document.createElement('option');
+          option.value = app.id; // ID as the value
+          option.text = app.name; // Application name as the display text
+          dropdown.add(option);
+        });
+      }).getApplications();
+    }
+
+    // Function to trigger the API call when "Generate Report" button is clicked
+    function generateReport() {
+      let selectedID = document.getElementById('appDropdown').value;
+      if (!selectedID) {
+        alert("Please select an application!");
+        return;
+      }
+
+      // Run the Apps Script function to trigger the API with the selected ID
+      google.script.run.withSuccessHandler(function(response) {
+        document.getElementById('responseContent').innerText = JSON.stringify(response);
+      }).callApiWithAppID(selectedID);
+    }
+
+    // Load the applications when the page loads
+    document.addEventListener('DOMContentLoaded', loadApplications);
+  </script>
+
+</body>
+</html>
