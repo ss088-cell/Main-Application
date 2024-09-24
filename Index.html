@@ -35,13 +35,11 @@
 
   <button id="generateReportButton" onclick="generateReport()">Generate Report</button>
 
-  <div id="apiResponse">Generated Link: <span id="responseContent">None</span></div>
+  <div id="apiResponse">Response: <span id="responseContent">None</span></div>
 
   <script>
     // Function to load applications into the dropdown
     function loadApplications() {
-      console.log("Fetching applications from server...");
-      
       google.script.run.withSuccessHandler(function(applications) {
         let dropdown = document.getElementById('appDropdown');
         
@@ -51,14 +49,14 @@
         
         applications.forEach(function(app) {
           let option = document.createElement('option');
-          option.value = JSON.stringify({ appId: app.appId, engagementId: app.engagementId }); // Store both IDs
-          option.text = app.name; // Application name as the display text
+          option.value = JSON.stringify({ appId: app.appId, engagementId: app.engagementId });
+          option.text = app.name;
           dropdown.add(option);
         });
       }).getApplications();
     }
 
-    // Function to trigger the report generation when "Generate Report" button is clicked
+    // Function to generate report when button is clicked
     function generateReport() {
       let selectedValue = document.getElementById('appDropdown').value;
       if (!selectedValue) {
@@ -67,13 +65,9 @@
       }
 
       let selectedIDs = JSON.parse(selectedValue);
-      let appId = selectedIDs.appId;
-      let engagementId = selectedIDs.engagementId;
-
-      // Run the Apps Script function to generate the report
       google.script.run.withSuccessHandler(function(response) {
         document.getElementById('responseContent').innerText = response;
-      }).generateReportForApplication(appId, engagementId);
+      }).generateReport(selectedIDs.appId, selectedIDs.engagementId);
     }
 
     // Load the applications when the page loads
