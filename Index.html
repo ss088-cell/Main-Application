@@ -22,10 +22,6 @@
       margin-top: 20px;
       color: blue;
     }
-    #loading {
-      display: none;
-      color: green;
-    }
   </style>
 </head>
 <body>
@@ -39,23 +35,18 @@
 
   <button id="generateReportButton" onclick="generateReport()">Generate Report</button>
 
-  <p id="loading">Loading applications, please wait...</p>
-  <div id="apiResponse">Generated Link: <a id="responseContent" href="#" target="_blank">None</a></div>
+  <div id="apiResponse">Generated Link: <span id="responseContent">None</span></div>
 
   <script>
     // Function to load applications into the dropdown
     function loadApplications() {
-      document.getElementById('loading').style.display = 'block'; // Show loading message
       console.log("Fetching applications from server...");
       
       google.script.run.withSuccessHandler(function(applications) {
-        document.getElementById('loading').style.display = 'none'; // Hide loading message
-
         let dropdown = document.getElementById('appDropdown');
         
         if (applications.length === 0) {
-          document.getElementById('responseContent').innerText = "No applications found!";
-          return;
+          console.error("No applications found! Check Google Sheet.");
         }
         
         applications.forEach(function(app) {
@@ -67,7 +58,7 @@
       }).getApplications();
     }
 
-    // Function to trigger the download when "Generate Report" button is clicked
+    // Function to trigger the report generation when "Generate Report" button is clicked
     function generateReport() {
       let selectedValue = document.getElementById('appDropdown').value;
       if (!selectedValue) {
@@ -79,15 +70,10 @@
       let appId = selectedIDs.appId;
       let engagementId = selectedIDs.engagementId;
 
-      // Run the Apps Script function to generate the link with both IDs
-      google.script.run.withSuccessHandler(function(link) {
-        let responseElement = document.getElementById('responseContent');
-        responseElement.innerText = link;
-        responseElement.href = link;
-
-        // Automatically open the generated link in a new tab to trigger CSV download
-        window.open(link, '_blank');
-      }).getDownloadLink(appId, engagementId);
+      // Run the Apps Script function to generate the report
+      google.script.run.withSuccessHandler(function(response) {
+        document.getElementById('responseContent').innerText = response;
+      }).generateReportForApplication(appId, engagementId);
     }
 
     // Load the applications when the page loads
