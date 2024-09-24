@@ -22,6 +22,10 @@
       margin-top: 20px;
       color: blue;
     }
+    #loading {
+      display: none;
+      color: green;
+    }
   </style>
 </head>
 <body>
@@ -35,41 +39,55 @@
 
   <button id="generateReportButton" onclick="generateReport()">Generate Report</button>
 
-  <div id="apiResponse">API Response: <span id="responseContent">None</span></div>
+  <p id="loading">Loading applications, please wait...</p>
+  <div id="apiResponse">Generated Link: <a id="responseContent" href="#" target="_blank">None</a></div>
 
   <script>
     // Function to load applications into the dropdown
     function loadApplications() {
+      document.getElementById('loading').style.display = 'block'; // Show loading message
       console.log("Fetching applications from server...");
       
       google.script.run.withSuccessHandler(function(applications) {
+        document.getElementById('loading').style.display = 'none'; // Hide loading message
+
         let dropdown = document.getElementById('appDropdown');
         
         if (applications.length === 0) {
-          console.error("No applications found! Check Google Sheet.");
+          document.getElementById('responseContent').innerText = "No applications found!";
+          return;
         }
         
         applications.forEach(function(app) {
           let option = document.createElement('option');
-          option.value = app.id; // ID as the value
+          option.value = JSON.stringify({ appId: app.appId, engagementId: app.engagementId }); // Store both IDs
           option.text = app.name; // Application name as the display text
           dropdown.add(option);
         });
       }).getApplications();
     }
 
-    // Function to trigger the API call when "Generate Report" button is clicked
+    // Function to trigger the download when "Generate Report" button is clicked
     function generateReport() {
-      let selectedID = document.getElementById('appDropdown').value;
-      if (!selectedID) {
+      let selectedValue = document.getElementById('appDropdown').value;
+      if (!selectedValue) {
         alert("Please select an application!");
         return;
       }
 
-      // Run the Apps Script function to trigger the API with the selected ID
-      google.script.run.withSuccessHandler(function(response) {
-        document.getElementById('responseContent').innerText = JSON.stringify(response);
-      }).callApiWithAppID(selectedID);
+      let selectedIDs = JSON.parse(selectedValue);
+      let appId = selectedIDs.appId;
+      let engagementId = selectedIDs.engagementId;
+
+      // Run the Apps Script function to generate the link with both IDs
+      google.script.run.withSuccessHandler(function(link) {
+        let responseElement = document.getElementById('responseContent');
+        responseElement.innerText = link;
+        responseElement.href = link;
+
+        // Automatically open the generated link in a new tab to trigger CSV download
+        window.open(link, '_blank');
+      }).getDownloadLink(appId, engagementId);
     }
 
     // Load the applications when the page loads
