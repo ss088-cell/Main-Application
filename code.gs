@@ -38,11 +38,13 @@ function getDownloadLink(appID, engagementID) {
   return fullUrl;
 }
 
-// Function to import CSV from a given URL and create a new Google Sheet
+// Function to import CSV from a URL and create a new Google Sheet
 function importCSVFromUrl(url) {
   try {
     const response = UrlFetchApp.fetch(url); // Fetch the CSV file
     const csv = response.getContentText(); // Get the content as text
+    Logger.log("Fetched CSV content: " + csv); // Log the fetched content for debugging
+
     const data = Utilities.parseCsv(csv); // Parse the CSV text
 
     // Create a new spreadsheet
@@ -51,8 +53,10 @@ function importCSVFromUrl(url) {
     
     sheet.getRange(1, 1, data.length, data[0].length).setValues(data); // Set the data into the sheet
     
-    return `CSV imported successfully! View it <a href="${newSpreadsheet.getUrl()}" target="_blank">here</a>.`; // Return success message with link
+    // Return success message with the download link
+    return `CSV imported successfully! You can download it <a href="${newSpreadsheet.getUrl()}" target="_blank">here</a>.`; 
   } catch (error) {
+    Logger.log("Error importing CSV: " + error.message); // Log the error message
     return "Error importing CSV: " + error.message; // Return error message
   }
 }
