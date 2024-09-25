@@ -50,8 +50,16 @@ function uploadCSVToSheet(csvUrl) {
   try {
     // Fetch the CSV data from the URL
     const response = UrlFetchApp.fetch(csvUrl);
+    const responseCode = response.getResponseCode();
     const csvData = response.getContentText();
     
+    Logger.log("Response code: " + responseCode); // Check the response code
+    Logger.log("CSV data: " + csvData);           // Check the fetched CSV content
+
+    if (responseCode !== 200) {
+      throw new Error('Failed to fetch CSV. Response code: ' + responseCode);
+    }
+
     // Parse the CSV data
     const parsedData = Utilities.parseCsv(csvData);
     
@@ -69,7 +77,7 @@ function uploadCSVToSheet(csvUrl) {
     
     return sheetUrl;  // Return the Google Sheet URL
   } catch (error) {
-    Logger.log('Error uploading CSV: ' + error);
+    Logger.log('Error uploading CSV: ' + error.toString()); // Log the exact error
     return 'Error uploading CSV!';
   }
 }
