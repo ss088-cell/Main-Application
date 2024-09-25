@@ -8,20 +8,20 @@ function getApplications() {
   const spreadsheetId = '1UE2fdxYGUGPFRoZtnQAbO8Tzc6T99GMAoiNhxGGwego'; // Replace with your actual spreadsheet ID
   const spreadsheet = SpreadsheetApp.openById(spreadsheetId);
   const sheet = spreadsheet.getSheetByName('Applications');
-  
+
   if (!sheet) {
     Logger.log("Sheet 'Applications' not found!");
     return [];
   }
-  
+
   const lastRow = sheet.getLastRow();
   if (lastRow < 2) {
     Logger.log("No data in sheet beyond headers.");
     return [];
   }
-  
+
   const data = sheet.getRange(2, 1, lastRow - 1, 3).getValues();
-  
+
   let appList = [];
   data.forEach(row => {
     if (row[0] && row[1] && row[2]) {
@@ -59,4 +59,15 @@ function importCSVFromUrl(url) {
     Logger.log("Error importing CSV: " + error.message); // Log the error message
     return "Error importing CSV: " + error.message; // Return error message
   }
+}
+
+// Function to generate and return a download link for the CSV
+function generateCSV(appID, engagementID) {
+  // Here, implement your logic to generate CSV data based on appID and engagementID
+  const csvData = "Header1,Header2,Header3\nValue1,Value2,Value3"; // Example CSV data, replace with your logic
+
+  const file = DriveApp.createFile('GeneratedReport.csv', csvData, MimeType.CSV);
+  const url = file.getDownloadUrl();
+
+  return url; // Return the download link for the generated CSV
 }
