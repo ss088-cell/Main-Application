@@ -43,7 +43,11 @@
   <button id="generateReportButton" onclick="generateReport()">Generate Report</button>
 
   <p id="loading">Loading applications, please wait...</p>
+  
+  <!-- The section below was removed as per your request -->
+  <!-- 
   <div id="apiResponse">Generated Link: <a id="responseContent" href="#" target="_blank">None</a></div>
+  -->
   
   <div id="statusMessage"></div>
 
@@ -59,7 +63,7 @@
         let dropdown = document.getElementById('appDropdown');
         
         if (applications.length === 0) {
-          document.getElementById('responseContent').innerText = "No applications found!";
+          document.getElementById('statusMessage').innerText = "No applications found!";
           return;
         }
         
@@ -100,10 +104,7 @@
 
       // Run the Apps Script function to generate the link with both IDs
       google.script.run.withSuccessHandler(function(link) {
-        let responseElement = document.getElementById('responseContent');
-        responseElement.innerText = link;
-        responseElement.href = link;
-
+        // Automatically open the generated link in a new tab
         window.open(link, '_blank');
 
         // Get the current date
