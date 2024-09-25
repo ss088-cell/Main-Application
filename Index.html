@@ -22,6 +22,10 @@
       margin-top: 20px;
       color: blue;
     }
+    #loading {
+      display: none;
+      color: green;
+    }
   </style>
 </head>
 <body>
@@ -35,28 +39,24 @@
 
   <button id="generateReportButton" onclick="generateReport()">Generate Report</button>
 
-  <div id="apiResponse">Response: <span id="responseContent">None</span></div>
+  <p id="loading">Loading applications, please wait...</p>
+  <div id="apiResponse">Report Generation Status: <span id="responseContent">None</span></div>
 
   <script>
-    // Function to load applications into the dropdown
     function loadApplications() {
+      document.getElementById('loading').style.display = 'block';
       google.script.run.withSuccessHandler(function(applications) {
+        document.getElementById('loading').style.display = 'none';
         let dropdown = document.getElementById('appDropdown');
-        
-        if (applications.length === 0) {
-          console.error("No applications found! Check Google Sheet.");
-        }
-        
         applications.forEach(function(app) {
           let option = document.createElement('option');
-          option.value = JSON.stringify({ appId: app.appId, engagementId: app.engagementId });
+          option.value = JSON.stringify({ appId: app.appId, engagementId: app.engagementId, appName: app.name, team: app.team });
           option.text = app.name;
           dropdown.add(option);
         });
       }).getApplications();
     }
 
-    // Function to generate report when button is clicked
     function generateReport() {
       let selectedValue = document.getElementById('appDropdown').value;
       if (!selectedValue) {
@@ -64,13 +64,18 @@
         return;
       }
 
-      let selectedIDs = JSON.parse(selectedValue);
+      let selectedData = JSON.parse(selectedValue);
+      let appId = selectedData.appId;
+      let engagementId = selectedData.engagementId;
+      let appName = selectedData.appName;
+      let team = selectedData.team;
+
+      // Call the server-side function to fetch and send the CSV to the Generate Report application
       google.script.run.withSuccessHandler(function(response) {
         document.getElementById('responseContent').innerText = response;
-      }).generateReport(selectedIDs.appId, selectedIDs.engagementId);
+      }).fetchAndSendCSV(appId, engagementId, appName, team);
     }
 
-    // Load the applications when the page loads
     document.addEventListener('DOMContentLoaded', loadApplications);
   </script>
 
