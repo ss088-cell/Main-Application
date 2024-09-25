@@ -38,28 +38,42 @@ function getDownloadLink(appID, engagementID) {
   return fullUrl;
 }
 
-// Function to upload the CSV to a Google Sheet
-function uploadCSVToSheet(csvData) {
+// Function to import CSV from a URL and write to Google Sheet
+function importCSVFromUrl(url) {
   try {
-    // Strip BOM if present
-    csvData = csvData.replace(/^\uFEFF/, '');
+    // Fetch the CSV file from the provided URL
+    const response = UrlFetchApp.fetch(url);
     
-    // Parse CSV data using Google's built-in parser
-    let parsedData = Utilities.parseCsv(csvData);
-
-    // Create a new Google Sheet
-    const newSheet = SpreadsheetApp.create('Uploaded CSV Data');
-    const sheet = newSheet.getActiveSheet();
-
-    // Insert the parsed CSV data into the new sheet
-    sheet.getRange(1, 1, parsedData.length, parsedData[0].length).setValues(parsedData);
-
-    // Get the URL of the new Google Sheet
-    const sheetUrl = newSheet.getUrl();
-
-    return sheetUrl;  // Return the Google Sheet URL
+    // Get the content of the CSV file as text
+    const csv = response.getContentText();
+    
+    // Parse the CSV content into a 2D array
+    const data = Utilities.parseCsv(csv);
+    
+    // Get the active Google Sheet
+    const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+    
+    // Clear any existing content in the sheet
+    sheet.clear();
+    
+    // Set the parsed CSV data into the sheet
+    sheet.getRange(1, 1, data.length, data[0].length).setValues(data);
+    
+    // Log the success message
+    Logger.log('CSV data imported successfully');
+    
+    // Get the spreadsheet ID to generate the link
+    const spreadsheetId = SpreadsheetApp.getActiveSpreadsheet().getId();
+    const sheetUrl = `https://docs.google.com/spreadsheets/d/${spreadsheetId}`;
+    
+    // Open the Google Sheet in a new tab
+    const htmlOutput = HtmlService.createHtmlOutput(`<script>window.open("${sheetUrl}");</script>`)
+                                  .setWidth(100)
+                                  .setHeight(50);
+    SpreadsheetApp.getUi().showModalDialog(htmlOutput, 'Opening Google Sheet');
+    
   } catch (error) {
-    Logger.log('Error uploading CSV: ' + error.toString());
-    return 'Error uploading CSV!';
+    Logger.log(`Error importing CSV: ${error}`);
+    SpreadsheetApp.getUi().alert('Failed to import CSV. Please check the URL and try again.');
   }
 }
