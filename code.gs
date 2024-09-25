@@ -38,35 +38,21 @@ function getDownloadLink(appID, engagementID) {
   return fullUrl;
 }
 
-// Function to import CSV from a URL
+// Function to import CSV from a given URL and create a new Google Sheet
 function importCSVFromUrl(url) {
   try {
     const response = UrlFetchApp.fetch(url); // Fetch the CSV file
-    let csv = response.getContentText(); // Get the content as text
+    const csv = response.getContentText(); // Get the content as text
+    const data = Utilities.parseCsv(csv); // Parse the CSV text
+
+    // Create a new spreadsheet
+    const newSpreadsheet = SpreadsheetApp.create('Imported CSV Data');
+    const sheet = newSpreadsheet.getActiveSheet();
     
-    // Optional: Check for other delimiters (e.g., semicolons) and replace them with commas
-    csv = csv.replace(/;/g, ',');
+    sheet.getRange(1, 1, data.length, data[0].length).setValues(data); // Set the data into the sheet
     
-    Logger.log(csv); // Log the CSV content to review it
-
-    // Try parsing the CSV text
-    const data = Utilities.parseCsv(csv);
-
-    // Log parsed data to ensure it's properly structured
-    Logger.log(data);
-
-    const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
-    sheet.clear(); // Clear the current content
-
-    // Check for empty data or rows with mismatched columns
-    if (data.length > 0 && data[0].length > 0) {
-      sheet.getRange(1, 1, data.length, data[0].length).setValues(data); // Set the data into the sheet
-    } else {
-      throw new Error('CSV contains no valid data');
-    }
-
-  } catch (e) {
-    Logger.log(`Error parsing CSV: ${e.message}`);
-    throw new Error(`Error parsing CSV: ${e.message}`);
+    return `CSV imported successfully! View it <a href="${newSpreadsheet.getUrl()}" target="_blank">here</a>.`; // Return success message with link
+  } catch (error) {
+    return "Error importing CSV: " + error.message; // Return error message
   }
 }
