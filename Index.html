@@ -11,24 +11,23 @@
     h1 {
       color: #4CAF50;
     }
-    select, button {
+    select, button, input {
       font-size: 16px;
       padding: 10px;
       margin: 10px 0;
       border-radius: 4px;
       border: 1px solid #ccc;
     }
-    #statusMessage {
+    #apiResponse, #statusMessage {
       margin-top: 20px;
       color: blue;
     }
-    #csvContainer {
-      width: 100%;
-      height: 400px;
-      border: 1px solid #ccc;
-      margin-top: 20px;
-      padding: 10px;
-      background-color: white;
+    #loading {
+      display: none;
+      color: green;
+    }
+    #statusMessage {
+      color: red; /* Default red for errors */
     }
   </style>
 </head>
@@ -41,21 +40,27 @@
     <!-- Options will be loaded dynamically -->
   </select>
 
-  <button id="generateReportButton" onclick="generateReport()">Generate Report</button>
+  <button id="generateReportButton" onclick="generateReport()">Generate Report & Upload CSV</button>
 
-  <div id="statusMessage"></div>
+  <p id="loading">Loading applications, please wait...</p>
+  <div id="apiResponse">Generated Link: <a id="responseContent" href="#" target="_blank">None</a></div>
   
-  <!-- CSV content will be displayed here -->
-  <div id="csvContainer"></div>
+  <!-- Display current date -->
+  <div id="statusMessage"></div>
 
   <script>
     // Function to load applications into the dropdown
     function loadApplications() {
+      document.getElementById('loading').style.display = 'block'; // Show loading message
       console.log("Fetching applications from server...");
+      
       google.script.run.withSuccessHandler(function(applications) {
+        document.getElementById('loading').style.display = 'none'; // Hide loading message
+
         let dropdown = document.getElementById('appDropdown');
+        
         if (applications.length === 0) {
-          document.getElementById('statusMessage').innerText = "No applications found!";
+          document.getElementById('responseContent').innerText = "No applications found!";
           return;
         }
         
@@ -68,11 +73,11 @@
       }).getApplications();
     }
 
-    // Function to generate the report and fetch the CSV content
+    // Function to trigger the download, open the CSV in a new tab, and upload to Google Sheets
     function generateReport() {
       let selectedValue = document.getElementById('appDropdown').value;
       let statusMessage = document.getElementById('statusMessage');
-      
+
       if (!selectedValue) {
         statusMessage.innerText = "Please select an application!";
         statusMessage.style.color = "red";
@@ -83,48 +88,26 @@
       let appId = selectedIDs.appId;
       let engagementId = selectedIDs.engagementId;
 
+      // Show a loading message while generating the link
       statusMessage.innerText = "Generating report link...";
       statusMessage.style.color = "blue";
 
+      // Run the Apps Script function to generate the link with both IDs
       google.script.run.withSuccessHandler(function(link) {
-        statusMessage.innerText = "CSV file generated. Fetching CSV content...";
-        statusMessage.style.color = "blue";
+        let responseElement = document.getElementById('responseContent');
+        responseElement.innerText = link;
+        responseElement.href = link;
 
-        // Fetch the CSV file and display it in the iframe
-        fetchCSVContent(link);
+        // Automatically open the generated link in a new tab to trigger CSV download
+        window.open(link, '_blank');
+
+        // Upload the CSV to Google Sheets
+        google.script.run.withSuccessHandler(function(sheetLink) {
+          statusMessage.innerText = `CSV uploaded! View it here: ${sheetLink}`;
+          statusMessage.style.color = "green";
+        }).uploadCSVToSheet(link);
+
       }).getDownloadLink(appId, engagementId);
-    }
-
-    // Function to fetch the CSV content and display it
-    function fetchCSVContent(url) {
-      fetch(url)
-        .then(response => response.text())
-        .then(data => {
-          displayCSVInIframe(data);
-        })
-        .catch(error => {
-          document.getElementById('statusMessage').innerText = "Failed to fetch CSV content: " + error;
-          document.getElementById('statusMessage').style.color = "red";
-        });
-    }
-
-    // Function to display the CSV content in the iframe (here a div container)
-    function displayCSVInIframe(csvContent) {
-      let container = document.getElementById('csvContainer');
-      let rows = csvContent.split('\n');
-      let table = "<table border='1' cellpadding='5' cellspacing='0'>";
-      
-      rows.forEach(row => {
-        let columns = row.split(',');
-        table += "<tr>";
-        columns.forEach(column => {
-          table += "<td>" + column.trim() + "</td>";
-        });
-        table += "</tr>";
-      });
-      
-      table += "</table>";
-      container.innerHTML = table;
     }
 
     // Load the applications when the page loads
