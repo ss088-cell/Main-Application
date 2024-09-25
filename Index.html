@@ -33,14 +33,14 @@
 </head>
 <body>
 
-  <h1>Upload CSV and Generate Report</h1>
-  
+  <h1>Generate CSV</h1> <!-- Updated heading -->
+
   <label for="appDropdown">Application:</label>
   <select id="appDropdown">
     <!-- Options will be loaded dynamically -->
   </select>
 
-  <button id="generateReportButton" onclick="generateReport()">Generate Report</button>
+  <button id="generateReportButton" onclick="generateReport()">Generate CSV</button> <!-- Updated button text -->
 
   <p id="loading">Loading applications, please wait...</p>
   
@@ -99,20 +99,27 @@
 
       // Run the Apps Script function to generate the report
       google.script.run.withSuccessHandler(function(downloadUrl) {
-        // Notify the user that the report generation is complete
-        statusMessage.innerText = "Report generation complete. Downloading report...";
+        // Get the current date
+        let today = new Date();
+        let date = today.getDate();
+        let month = today.getMonth() + 1;
+        let year = today.getFullYear();
+
+        // Notify the user that the report generation is complete with the desired format
+        const reportName = `Macroscope Scan ${teamName} ${appName} - ${date}-${month}-${year}`;
+        statusMessage.innerText = `Report generated for "${reportName}". Downloading report...`;
         statusMessage.style.color = "green";
 
         // Trigger the download of the report
         const anchor = document.createElement('a');
         anchor.href = downloadUrl;
-        anchor.download = `Report-${teamName}-${appName}.csv`; // Customize the download filename
+        anchor.download = `Report-${teamName}-${appName}-${date}-${month}-${year}.csv`; // Customize the download filename
         document.body.appendChild(anchor);
         anchor.click();
         document.body.removeChild(anchor);
 
         // Final status message after download starts
-        statusMessage.innerText = "Report downloaded successfully!";
+        statusMessage.innerText = `Report for "${reportName}" downloaded successfully!`;
         statusMessage.style.color = "green";
 
       }).generateCSV(appId, engagementId);
