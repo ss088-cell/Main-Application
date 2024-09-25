@@ -45,34 +45,3 @@ function getDownloadLink(appID, engagementID) {
   return fullUrl;
 }
 
-// Function to send the CSV and data to the Generate Report Application
-function sendCSVDataToReportApp(csvData, appName, team, date, month, year) {
-  const reportAppUrl = "YOUR_GENERATE_REPORT_APP_DEPLOYED_URL"; // Add your Generate Report App's deployed URL
-  
-  const payload = {
-    csvData: csvData,
-    appName: appName,
-    team: team,
-    date: date,
-    month: month,
-    year: year
-  };
-
-  const options = {
-    method: "POST",
-    contentType: "application/json",
-    payload: JSON.stringify(payload),
-    muteHttpExceptions: true
-  };
-
-  try {
-    const response = UrlFetchApp.fetch(reportAppUrl, options);
-    Logger.log("Response from Generate Report App: " + response.getContentText());
-    
-    return { success: true }; // Return success status
-  } catch (error) {
-    Logger.log("Error sending data to Generate Report App: " + error.toString());
-    
-    return { success: false, error: error.toString() }; // Return error status
-  }
-}
