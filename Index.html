@@ -44,11 +44,6 @@
 
   <p id="loading">Loading applications, please wait...</p>
   
-  <!-- The section below was removed as per your request -->
-  <!-- 
-  <div id="apiResponse">Generated Link: <a id="responseContent" href="#" target="_blank">None</a></div>
-  -->
-  
   <div id="statusMessage"></div>
 
   <script>
@@ -81,7 +76,7 @@
       }).getApplications();
     }
 
-    // Function to trigger the download and open the CSV in a new tab
+    // Function to generate the report and provide status updates
     function generateReport() {
       let selectedValue = document.getElementById('appDropdown').value;
       let statusMessage = document.getElementById('statusMessage');
@@ -98,24 +93,26 @@
       let appName = selectedIDs.name; // Application name
       let teamName = selectedIDs.team; // Team name
 
-      // Show a loading message while generating the link
-      statusMessage.innerText = "Generating report link...";
+      // Show a loading message while generating the report
+      statusMessage.innerText = "Generating report, please wait...";
       statusMessage.style.color = "blue";
 
-      // Run the Apps Script function to generate the link with both IDs
-      google.script.run.withSuccessHandler(function(link) {
-        // Automatically open the generated link in a new tab
-        window.open(link, '_blank');
+      // Run the Apps Script function to generate the report
+      google.script.run.withSuccessHandler(function(downloadUrl) {
+        // Notify the user that the report generation is complete
+        statusMessage.innerText = "Report generation complete. Downloading report...";
+        statusMessage.style.color = "green";
 
-        // Get the current date
-        let today = new Date();
-        let date = today.getDate();
-        let month = today.getMonth() + 1;
-        let year = today.getFullYear();
+        // Trigger the download of the report
+        const anchor = document.createElement('a');
+        anchor.href = downloadUrl;
+        anchor.download = `Report-${teamName}-${appName}.csv`; // Customize the download filename
+        document.body.appendChild(anchor);
+        anchor.click();
+        document.body.removeChild(anchor);
 
-        // Format the report generated message
-        const reportName = `Macroscope Scan-${teamName}-${appName}-${date}-${month}-${year}`;
-        statusMessage.innerText = `Report generated for "${reportName}"`;
+        // Final status message after download starts
+        statusMessage.innerText = "Report downloaded successfully!";
         statusMessage.style.color = "green";
 
       }).generateCSV(appId, engagementId);
