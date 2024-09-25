@@ -29,11 +29,6 @@
     #statusMessage {
       color: red; /* Default red for errors */
     }
-    iframe {
-      width: 100%;
-      height: 400px;
-      margin-top: 20px;
-    }
   </style>
 </head>
 <body>
@@ -52,9 +47,6 @@
   
   <!-- Display current date -->
   <div id="statusMessage"></div>
-
-  <!-- Iframe to display the CSV -->
-  <iframe id="csvIframe" src=""></iframe>
 
   <script>
     // Function to load applications into the dropdown
@@ -81,7 +73,7 @@
       }).getApplications();
     }
 
-    // Function to trigger the download and display the CSV
+    // Function to trigger the download and open the CSV in a new tab
     function generateReport() {
       let selectedValue = document.getElementById('appDropdown').value;
       let statusMessage = document.getElementById('statusMessage');
@@ -106,8 +98,8 @@
         responseElement.innerText = link;
         responseElement.href = link;
 
-        // Automatically open the generated link in the iframe to display the CSV
-        document.getElementById('csvIframe').src = link;
+        // Automatically open the generated link in a new tab to trigger CSV download
+        window.open(link, '_blank');
 
         // Get today's date
         let today = new Date();
@@ -128,3 +120,4 @@
 
 </body>
 </html>
+
