@@ -48,12 +48,10 @@
   <div id="statusMessage"></div>
 
   <h2>Import CSV from URL</h2>
-  <label for="csvUrlInput">CSV URL:</label>
-  <input type="text" id="csvUrlInput" placeholder="Enter CSV file URL">
+  <input type="text" id="csvUrlInput" placeholder="Enter CSV URL">
   <button onclick="importCSV()">Import CSV</button>
-
   <div id="csvUploadMessage"></div>
-  
+
   <script>
     // Function to load applications into the dropdown
     function loadApplications() {
@@ -121,6 +119,8 @@
     function importCSV() {
       const csvUrl = document.getElementById('csvUrlInput').value;
 
+      console.log("CSV URL entered:", csvUrl); // Debug log
+
       if (!csvUrl) {
         document.getElementById('csvUploadMessage').innerText = "Please enter a CSV URL!";
         return;
@@ -128,7 +128,8 @@
 
       // Call the Apps Script function to import the CSV from the URL
       google.script.run.withSuccessHandler(function(message) {
-        document.getElementById('csvUploadMessage').innerText = message;
+        console.log("Import CSV Response:", message); // Debug log
+        document.getElementById('csvUploadMessage').innerHTML = message;
       }).importCSVFromUrl(csvUrl);
     }
 
