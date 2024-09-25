@@ -1,4 +1,4 @@
-// Function to serve the HTML page
+// Serve the HTML page
 function doGet() {
   return HtmlService.createHtmlOutputFromFile('Index');
 }
@@ -38,23 +38,35 @@ function getDownloadLink(appID, engagementID) {
   return fullUrl;
 }
 
-// Function to upload the CSV from a URL and write it to a Google Sheet
+// Function to import CSV from a URL
 function importCSVFromUrl(url) {
-  const response = UrlFetchApp.fetch(url); // Fetch the CSV file
-  const csv = response.getContentText(); // Get the content as text
-  const data = Utilities.parseCsv(csv); // Parse the CSV text
-
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
-  sheet.clear(); // Clear the current content
-  sheet.getRange(1, 1, data.length, data[0].length).setValues(data); // Set the data into the sheet
-}
-
-// Updated function to handle CSV upload from URL
-function uploadCSVToSheet(url) {
   try {
-    importCSVFromUrl(url);
-    return 'CSV file successfully uploaded and processed!';
+    const response = UrlFetchApp.fetch(url); // Fetch the CSV file
+    let csv = response.getContentText(); // Get the content as text
+    
+    // Optional: Check for other delimiters (e.g., semicolons) and replace them with commas
+    csv = csv.replace(/;/g, ',');
+    
+    Logger.log(csv); // Log the CSV content to review it
+
+    // Try parsing the CSV text
+    const data = Utilities.parseCsv(csv);
+
+    // Log parsed data to ensure it's properly structured
+    Logger.log(data);
+
+    const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+    sheet.clear(); // Clear the current content
+
+    // Check for empty data or rows with mismatched columns
+    if (data.length > 0 && data[0].length > 0) {
+      sheet.getRange(1, 1, data.length, data[0].length).setValues(data); // Set the data into the sheet
+    } else {
+      throw new Error('CSV contains no valid data');
+    }
+
   } catch (e) {
-    return `Error uploading CSV: ${e.message}`;
+    Logger.log(`Error parsing CSV: ${e.message}`);
+    throw new Error(`Error parsing CSV: ${e.message}`);
   }
 }
