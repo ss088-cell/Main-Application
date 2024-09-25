@@ -11,51 +11,127 @@
     h1 {
       color: #4CAF50;
     }
-    input, button {
+    select, button, input {
       font-size: 16px;
       padding: 10px;
       margin: 10px 0;
       border-radius: 4px;
       border: 1px solid #ccc;
     }
-    #statusMessage {
+    #apiResponse, #statusMessage {
       margin-top: 20px;
       color: blue;
+    }
+    #loading {
+      display: none;
+      color: green;
+    }
+    #statusMessage {
+      color: red; /* Default red for errors */
     }
   </style>
 </head>
 <body>
 
-  <h1>Import CSV from URL</h1>
+  <h1>Upload CSV and Generate Report</h1>
+  
+  <label for="appDropdown">Application:</label>
+  <select id="appDropdown">
+    <!-- Options will be loaded dynamically -->
+  </select>
 
-  <label for="csvUrlInput">CSV Download Link:</label><br>
-  <input type="text" id="csvUrlInput" placeholder="Enter the URL of the CSV file"><br>
+  <button id="generateReportButton" onclick="generateReport()">Generate Report</button>
+
+  <p id="loading">Loading applications, please wait...</p>
+  <div id="apiResponse">Generated Link: <a id="responseContent" href="#" target="_blank">None</a></div>
   
-  <button onclick="importCSV()">Import CSV</button>
-  
-  <p id="statusMessage"></p>
+  <div id="statusMessage"></div>
+
+  <h2>Upload CSV</h2>
+  <input type="url" id="csvUrlInput" placeholder="Enter CSV file URL">
+  <button onclick="uploadCSV()">Upload CSV</button>
+
+  <div id="csvUploadMessage"></div>
   
   <script>
-    // Function to call the Apps Script function to import CSV
-    function importCSV() {
-      const csvUrl = document.getElementById('csvUrlInput').value;
-      const statusMessage = document.getElementById('statusMessage');
+    // Function to load applications into the dropdown
+    function loadApplications() {
+      document.getElementById('loading').style.display = 'block'; // Show loading message
+      console.log("Fetching applications from server...");
       
-      if (!csvUrl) {
-        statusMessage.innerText = 'Please enter a valid URL.';
-        statusMessage.style.color = 'red';
+      google.script.run.withSuccessHandler(function(applications) {
+        document.getElementById('loading').style.display = 'none'; // Hide loading message
+
+        let dropdown = document.getElementById('appDropdown');
+        
+        if (applications.length === 0) {
+          document.getElementById('responseContent').innerText = "No applications found!";
+          return;
+        }
+        
+        applications.forEach(function(app) {
+          let option = document.createElement('option');
+          option.value = JSON.stringify({ appId: app.appId, engagementId: app.engagementId }); // Store both IDs
+          option.text = app.name; // Application name as the display text
+          dropdown.add(option);
+        });
+      }).getApplications();
+    }
+
+    // Function to trigger the download and open the CSV in a new tab
+    function generateReport() {
+      let selectedValue = document.getElementById('appDropdown').value;
+      let statusMessage = document.getElementById('statusMessage');
+
+      if (!selectedValue) {
+        statusMessage.innerText = "Please select an application!";
+        statusMessage.style.color = "red";
         return;
       }
 
-      statusMessage.innerText = 'Importing CSV... Please wait.';
-      statusMessage.style.color = 'blue';
+      let selectedIDs = JSON.parse(selectedValue);
+      let appId = selectedIDs.appId;
+      let engagementId = selectedIDs.engagementId;
 
-      // Call the Apps Script function to import CSV from URL
-      google.script.run.withSuccessHandler(function() {
-        statusMessage.innerText = 'CSV imported successfully. The Google Sheet will open in a new tab.';
-        statusMessage.style.color = 'green';
-      }).importCSVFromUrl(csvUrl);
+      // Show a loading message while generating the link
+      statusMessage.innerText = "Generating report link...";
+      statusMessage.style.color = "blue";
+
+      // Run the Apps Script function to generate the link with both IDs
+      google.script.run.withSuccessHandler(function(link) {
+        let responseElement = document.getElementById('responseContent');
+        responseElement.innerText = link;
+        responseElement.href = link;
+
+        window.open(link, '_blank');
+
+        let today = new Date();
+        let date = today.getDate();
+        let month = today.getMonth() + 1;
+        let year = today.getFullYear();
+
+        statusMessage.innerText = `Report generated on: ${date}-${month}-${year}`;
+        statusMessage.style.color = "green";
+
+      }).getDownloadLink(appId, engagementId);
     }
+
+    // Function to upload and parse the CSV file from a URL
+    function uploadCSV() {
+      let csvUrlInput = document.getElementById('csvUrlInput').value;
+
+      if (!csvUrlInput) {
+        document.getElementById('csvUploadMessage').innerText = "Please enter a CSV file URL!";
+        return;
+      }
+
+      google.script.run.withSuccessHandler(function(response) {
+        document.getElementById('csvUploadMessage').innerText = response;
+      }).uploadCSVToSheet(csvUrlInput);
+    }
+
+    // Load the applications when the page loads
+    document.addEventListener('DOMContentLoaded', loadApplications);
   </script>
 
 </body>
