@@ -1,11 +1,13 @@
+// Serve the HTML page
 function doGet() {
   return HtmlService.createHtmlOutputFromFile('Index');
 }
 
 // Function to get the applications and their IDs from the Google Sheet
 function getApplications() {
-  const spreadsheetId = '1UE2fdxYGUGPFRoZtnQAbO8Tzc6T99GMAoiNhxGGwego'; // Replace with your actual spreadsheet ID
-  const sheet = SpreadsheetApp.openById(spreadsheetId).getSheetByName('Applications');
+  const spreadsheetId = '1UE2fdxYGUGPFRoZtnQAbO8Tzc6T99GMAoiNhxGGwego'; 
+  const spreadsheet = SpreadsheetApp.openById(spreadsheetId);
+  const sheet = spreadsheet.getSheetByName('Applications');
   
   if (!sheet) {
     Logger.log("Sheet 'Applications' not found!");
@@ -17,56 +19,57 @@ function getApplications() {
     Logger.log("No data in sheet beyond headers.");
     return [];
   }
-
-  const data = sheet.getRange(2, 1, lastRow - 1, 3).getValues();
+  
+  const data = sheet.getRange(2, 1, lastRow - 1, 4).getValues(); // Assuming team is in 4th column
+  
   let appList = [];
   data.forEach(row => {
-    if (row[0] && row[1] && row[2]) {
-      appList.push({ name: row[0], appId: row[1], engagementId: row[2] });
+    if (row[0] && row[1] && row[2] && row[3]) {
+      appList.push({ name: row[0], appId: row[1], engagementId: row[2], team: row[3] });
     }
   });
   return appList;
 }
 
-// Function to generate download link and pass CSV to Generate Report Application
-function generateReport(appId, engagementId) {
-  const baseUrl = `https://xyz.com/xyv/jdfyd/njd/${appId}/gdhgd/hjfhf/nhd/${engagementId}/hdhdb/ndhjd`; // Replace with actual URL
-  const csvData = UrlFetchApp.fetch(baseUrl).getContentText(); // Fetch CSV data from the generated link
+// Function to construct the URL and download the CSV
+function getDownloadLink(appID, engagementID) {
+  const baseUrl = 'https://xyz.com/xyv/jdfyd/njd'; 
+  const fullUrl = `${baseUrl}/${appID}/gdhgd/hjfhf/nhd/${engagementID}/hdhdb/ndhjd`; 
+  return fullUrl;
+}
+
+// Function to fetch and send CSV to Generate Report application
+function fetchAndSendCSV(appID, engagementID, appName, team) {
+  const downloadUrl = getDownloadLink(appID, engagementID);
+  const response = UrlFetchApp.fetch(downloadUrl);
   
-  // Get current date details
-  const date = new Date();
-  const day = date.getDate();
-  const month = date.getMonth() + 1; // Months are 0-based
-  const year = date.getFullYear();
-
-  // Assuming the team name is retrieved from the sheet
-  const teamName = 'Your Team Name'; // You can implement logic to fetch the actual team name
-  const appName = 'Your Application Name'; // You can implement logic to fetch the actual application name
-
-  // Prepare data to send to Generate Report Application
-  const reportData = {
+  const csvData = response.getContentText(); // Get the CSV as text
+  
+  // Get the current date details
+  const now = new Date();
+  const date = now.getDate(); // Changed from day to date
+  const month = now.getMonth() + 1; // JS months are 0-based
+  const year = now.getFullYear();
+  
+  // Prepare data to send
+  const postData = {
     csvData: csvData,
     appName: appName,
-    team: teamName,
-    day: day,
+    team: team,
+    date: date, // Changed from day to date
     month: month,
     year: year
   };
+  
+  // Send the data to the Generate Report Application via HTTP POST request
+  const generateReportUrl = 'https://script.google.com/macros/s/YOUR_GENERATE_REPORT_APP_DEPLOYMENT_URL/exec'; // Replace with your deployment URL
 
-  // Set the URL of the Generate Report Application
-  const generateReportUrl = 'https://script.google.com/macros/s/YOUR_GENERATE_REPORT_APP_DEPLOYMENT_ID/exec'; // Replace with your actual Generate Report app deployment URL
-
-  // Call the Generate Report application
   const options = {
-    method: 'post',
+    method: 'POST',
     contentType: 'application/json',
-    payload: JSON.stringify(reportData),
+    payload: JSON.stringify(postData)
   };
 
-  try {
-    const response = UrlFetchApp.fetch(generateReportUrl, options);
-    Logger.log(response.getContentText()); // Log the response for debugging
-  } catch (error) {
-    Logger.log("Error in fetching report: " + error.message);
-  }
+  const result = UrlFetchApp.fetch(generateReportUrl, options);
+  Logger.log("Response from Generate Report Application: " + result.getContentText());
 }
