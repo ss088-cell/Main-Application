@@ -11,22 +11,29 @@
     h1 {
       color: #4CAF50;
     }
-    select, button {
+    select, button, input {
       font-size: 16px;
       padding: 10px;
       margin: 10px 0;
       border-radius: 4px;
       border: 1px solid #ccc;
     }
-    #statusMessage {
+    #apiResponse, #statusMessage {
       margin-top: 20px;
-      color: green; /* Default green for success */
+      color: blue;
+    }
+    #loading {
+      display: none;
+      color: green;
+    }
+    #statusMessage {
+      color: red; /* Default red for errors */
     }
   </style>
 </head>
 <body>
 
-  <h1>Generate Report</h1>
+  <h1>Upload CSV and Generate Report</h1>
   
   <label for="appDropdown">Application:</label>
   <select id="appDropdown">
@@ -34,32 +41,43 @@
   </select>
 
   <button id="generateReportButton" onclick="generateReport()">Generate Report</button>
+
+  <p id="loading">Loading applications, please wait...</p>
+  <div id="apiResponse">Generated Link: <a id="responseContent" href="#" target="_blank">None</a></div>
   
   <div id="statusMessage"></div>
 
   <script>
     // Function to load applications into the dropdown
     function loadApplications() {
+      document.getElementById('loading').style.display = 'block'; // Show loading message
       console.log("Fetching applications from server...");
       
       google.script.run.withSuccessHandler(function(applications) {
+        document.getElementById('loading').style.display = 'none'; // Hide loading message
+
         let dropdown = document.getElementById('appDropdown');
         
         if (applications.length === 0) {
-          document.getElementById('statusMessage').innerText = "No applications found!";
+          document.getElementById('responseContent').innerText = "No applications found!";
           return;
         }
         
         applications.forEach(function(app) {
           let option = document.createElement('option');
-          option.value = JSON.stringify({ appId: app.appId, engagementId: app.engagementId }); // Store both IDs
-          option.text = app.name; // Application name as the display text
+          option.value = JSON.stringify({
+            appId: app.appId, 
+            engagementId: app.engagementId,
+            name: app.name,
+            team: app.team
+          }); // Store appID, engagementID, application name, and team name
+          option.text = app.name; // Application name as display text
           dropdown.add(option);
         });
       }).getApplications();
     }
 
-    // Function to generate the report, open in new tab, and notify user
+    // Function to trigger the download and open the CSV in a new tab
     function generateReport() {
       let selectedValue = document.getElementById('appDropdown').value;
       let statusMessage = document.getElementById('statusMessage');
@@ -73,16 +91,32 @@
       let selectedIDs = JSON.parse(selectedValue);
       let appId = selectedIDs.appId;
       let engagementId = selectedIDs.engagementId;
+      let appName = selectedIDs.name; // Application name
+      let teamName = selectedIDs.team; // Team name
 
-      // Notify the user while generating the report
-      statusMessage.innerText = "Generating report, please wait...";
+      // Show a loading message while generating the link
+      statusMessage.innerText = "Generating report link...";
       statusMessage.style.color = "blue";
 
       // Run the Apps Script function to generate the link with both IDs
       google.script.run.withSuccessHandler(function(link) {
-        window.open(link, '_blank'); // Open the report in a new tab
-        statusMessage.innerText = "Report downloaded successfully!";
+        let responseElement = document.getElementById('responseContent');
+        responseElement.innerText = link;
+        responseElement.href = link;
+
+        window.open(link, '_blank');
+
+        // Get the current date
+        let today = new Date();
+        let date = today.getDate();
+        let month = today.getMonth() + 1;
+        let year = today.getFullYear();
+
+        // Format the report generated message
+        const reportName = `Macroscope Scan-${teamName}-${appName}-${date}-${month}-${year}`;
+        statusMessage.innerText = `Report generated for "${reportName}"`;
         statusMessage.style.color = "green";
+
       }).generateCSV(appId, engagementId);
     }
 
