@@ -45,3 +45,31 @@ function getDownloadLink(appID, engagementID) {
   return fullUrl;
 }
 
+// Function to upload the CSV to a Google Sheet
+function uploadCSVToSheet(csvUrl) {
+  try {
+    // Fetch the CSV data from the URL
+    const response = UrlFetchApp.fetch(csvUrl);
+    const csvData = response.getContentText();
+    
+    // Parse the CSV data
+    const parsedData = Utilities.parseCsv(csvData);
+    
+    // Create a new Google Sheet
+    const newSheet = SpreadsheetApp.create('Uploaded CSV Data');
+    const sheet = newSheet.getActiveSheet();
+    
+    // Insert the parsed CSV data into the new sheet
+    sheet.getRange(1, 1, parsedData.length, parsedData[0].length).setValues(parsedData);
+    
+    // Get the URL of the new Google Sheet
+    const sheetUrl = newSheet.getUrl();
+    
+    Logger.log("Created new sheet: " + sheetUrl);
+    
+    return sheetUrl;  // Return the Google Sheet URL
+  } catch (error) {
+    Logger.log('Error uploading CSV: ' + error);
+    return 'Error uploading CSV!';
+  }
+}
