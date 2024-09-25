@@ -68,7 +68,11 @@ function sendCSVDataToReportApp(csvData, appName, team, date, month, year) {
   try {
     const response = UrlFetchApp.fetch(reportAppUrl, options);
     Logger.log("Response from Generate Report App: " + response.getContentText());
+    
+    return { success: true }; // Return success status
   } catch (error) {
     Logger.log("Error sending data to Generate Report App: " + error.toString());
+    
+    return { success: false, error: error.toString() }; // Return error status
   }
 }
