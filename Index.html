@@ -47,9 +47,10 @@
   
   <div id="statusMessage"></div>
 
-  <h2>Upload CSV</h2>
-  <input type="url" id="csvUrlInput" placeholder="Enter CSV file URL">
-  <button onclick="uploadCSV()">Upload CSV</button>
+  <h2>Import CSV from URL</h2>
+  <label for="csvUrlInput">CSV URL:</label>
+  <input type="text" id="csvUrlInput" placeholder="Enter CSV file URL">
+  <button onclick="importCSV()">Import CSV</button>
 
   <div id="csvUploadMessage"></div>
   
@@ -116,18 +117,19 @@
       }).getDownloadLink(appId, engagementId);
     }
 
-    // Function to upload and parse the CSV file from a URL
-    function uploadCSV() {
-      let csvUrlInput = document.getElementById('csvUrlInput').value;
+    // Function to import CSV from the given URL
+    function importCSV() {
+      const csvUrl = document.getElementById('csvUrlInput').value;
 
-      if (!csvUrlInput) {
-        document.getElementById('csvUploadMessage').innerText = "Please enter a CSV file URL!";
+      if (!csvUrl) {
+        document.getElementById('csvUploadMessage').innerText = "Please enter a CSV URL!";
         return;
       }
 
-      google.script.run.withSuccessHandler(function(response) {
-        document.getElementById('csvUploadMessage').innerText = response;
-      }).uploadCSVToSheet(csvUrlInput);
+      // Call the Apps Script function to import the CSV from the URL
+      google.script.run.withSuccessHandler(function(message) {
+        document.getElementById('csvUploadMessage').innerText = message;
+      }).importCSVFromUrl(csvUrl);
     }
 
     // Load the applications when the page loads
