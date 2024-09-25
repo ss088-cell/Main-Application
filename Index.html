@@ -18,13 +18,16 @@
       border-radius: 4px;
       border: 1px solid #ccc;
     }
-    #apiResponse {
+    #apiResponse, #statusMessage {
       margin-top: 20px;
       color: blue;
     }
     #loading {
       display: none;
       color: green;
+    }
+    #statusMessage {
+      color: red; /* Default red for errors */
     }
   </style>
 </head>
@@ -40,42 +43,94 @@
   <button id="generateReportButton" onclick="generateReport()">Generate Report</button>
 
   <p id="loading">Loading applications, please wait...</p>
-  <div id="apiResponse">Report Generation Status: <span id="responseContent">None</span></div>
+  <div id="apiResponse">Generated Link: <a id="responseContent" href="#" target="_blank">None</a></div>
+  
+  <!-- Status message to display the progress of CSV generation and sending -->
+  <div id="statusMessage"></div>
 
   <script>
+    // Function to load applications into the dropdown
     function loadApplications() {
-      document.getElementById('loading').style.display = 'block';
+      document.getElementById('loading').style.display = 'block'; // Show loading message
+      console.log("Fetching applications from server...");
+      
       google.script.run.withSuccessHandler(function(applications) {
-        document.getElementById('loading').style.display = 'none';
+        document.getElementById('loading').style.display = 'none'; // Hide loading message
+
         let dropdown = document.getElementById('appDropdown');
+        
+        if (applications.length === 0) {
+          document.getElementById('responseContent').innerText = "No applications found!";
+          return;
+        }
+        
         applications.forEach(function(app) {
           let option = document.createElement('option');
-          option.value = JSON.stringify({ appId: app.appId, engagementId: app.engagementId, appName: app.name, team: app.team });
-          option.text = app.name;
+          option.value = JSON.stringify({ appId: app.appId, engagementId: app.engagementId }); // Store both IDs
+          option.text = app.name; // Application name as the display text
           dropdown.add(option);
         });
       }).getApplications();
     }
 
+    // Function to trigger the download and send CSV data
     function generateReport() {
       let selectedValue = document.getElementById('appDropdown').value;
+      let statusMessage = document.getElementById('statusMessage');
+
       if (!selectedValue) {
-        alert("Please select an application!");
+        statusMessage.innerText = "Please select an application!";
+        statusMessage.style.color = "red";
         return;
       }
 
-      let selectedData = JSON.parse(selectedValue);
-      let appId = selectedData.appId;
-      let engagementId = selectedData.engagementId;
-      let appName = selectedData.appName;
-      let team = selectedData.team;
+      let selectedIDs = JSON.parse(selectedValue);
+      let appId = selectedIDs.appId;
+      let engagementId = selectedIDs.engagementId;
 
-      // Call the server-side function to fetch and send the CSV to the Generate Report application
-      google.script.run.withSuccessHandler(function(response) {
-        document.getElementById('responseContent').innerText = response;
-      }).fetchAndSendCSV(appId, engagementId, appName, team);
+      // Show a loading message while generating the link
+      statusMessage.innerText = "Generating report link...";
+      statusMessage.style.color = "blue";
+
+      // Run the Apps Script function to generate the link with both IDs
+      google.script.run.withSuccessHandler(function(link) {
+        let responseElement = document.getElementById('responseContent');
+        responseElement.innerText = link;
+        responseElement.href = link;
+
+        // Automatically open the generated link in a new tab to trigger CSV download
+        window.open(link, '_blank');
+
+        statusMessage.innerText = "CSV download started. Sending data to Generate Report Application...";
+        statusMessage.style.color = "blue"; // Update message color
+
+        // Example CSV data (replace this with actual data from the download link)
+        let csvData = "column1,column2\nvalue1,value2"; // Replace this with actual CSV data
+        let appName = "App Name"; // Replace with actual logic to get app name
+        let teamName = "Team Name"; // Replace with actual logic to get team name
+        let today = new Date();
+        let date = today.getDate();
+        let month = today.getMonth() + 1;
+        let year = today.getFullYear();
+
+        // Send the CSV data to the Generate Report Application
+        google.script.run.withSuccessHandler(function(result) {
+          if (result.success) {
+            statusMessage.innerText = "CSV successfully sent to Generate Report Application!";
+            statusMessage.style.color = "green"; // Success message in green
+          } else {
+            statusMessage.innerText = "Failed to send CSV to Generate Report Application: " + result.error;
+            statusMessage.style.color = "red"; // Error message in red
+          }
+        }).withFailureHandler(function(error) {
+          statusMessage.innerText = "Error: " + error;
+          statusMessage.style.color = "red";
+        }).sendCSVDataToReportApp(csvData, appName, teamName, date, month, year);
+
+      }).getDownloadLink(appId, engagementId);
     }
 
+    // Load the applications when the page loads
     document.addEventListener('DOMContentLoaded', loadApplications);
   </script>
 
