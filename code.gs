@@ -20,12 +20,12 @@ function getApplications() {
     return [];
   }
 
-  const data = sheet.getRange(2, 1, lastRow - 1, 3).getValues();
+  const data = sheet.getRange(2, 1, lastRow - 1, 4).getValues(); // Updated to get 4 columns (including Team)
 
   let appList = [];
   data.forEach(row => {
-    if (row[0] && row[1] && row[2]) {
-      appList.push({ name: row[0], appId: row[1], engagementId: row[2] });
+    if (row[0] && row[1] && row[2] && row[3]) {
+      appList.push({ name: row[0], appId: row[1], engagementId: row[2], team: row[3] });
     }
   });
   return appList;
@@ -40,13 +40,11 @@ function getDownloadLink(appID, engagementID) {
 
 // Function to generate and return a download link for the CSV
 function generateCSV(appID, engagementID) {
+  // Example logic for generating CSV data based on appID and engagementID
   const csvData = "Header1,Header2,Header3\nValue1,Value2,Value3"; // Example CSV data, replace with your logic
 
-  // Use the constructed URL for download
-  const fileUrl = getDownloadLink(appID, engagementID);
   const file = DriveApp.createFile('GeneratedReport.csv', csvData, MimeType.CSV);
+  const url = file.getDownloadUrl(); // This generates the download URL
 
-  const downloadLink = file.getDownloadUrl(); // Get the Google Drive download URL for the file
-  return downloadLink; // Return the link to be opened in a new tab
+  return url; // Return the download link for the generated CSV
 }
-
