@@ -38,36 +38,15 @@ function getDownloadLink(appID, engagementID) {
   return fullUrl;
 }
 
-// Function to import CSV from a URL and create a new Google Sheet
-function importCSVFromUrl(url) {
-  try {
-    const response = UrlFetchApp.fetch(url); // Fetch the CSV file
-    const csv = response.getContentText(); // Get the content as text
-    Logger.log("Fetched CSV content: " + csv); // Log the fetched content for debugging
-
-    const data = Utilities.parseCsv(csv); // Parse the CSV text
-
-    // Create a new spreadsheet
-    const newSpreadsheet = SpreadsheetApp.create('Imported CSV Data');
-    const sheet = newSpreadsheet.getActiveSheet();
-    
-    sheet.getRange(1, 1, data.length, data[0].length).setValues(data); // Set the data into the sheet
-    
-    // Return success message with the download link
-    return `CSV imported successfully! You can download it <a href="${newSpreadsheet.getUrl()}" target="_blank">here</a>.`; 
-  } catch (error) {
-    Logger.log("Error importing CSV: " + error.message); // Log the error message
-    return "Error importing CSV: " + error.message; // Return error message
-  }
-}
-
 // Function to generate and return a download link for the CSV
 function generateCSV(appID, engagementID) {
-  // Here, implement your logic to generate CSV data based on appID and engagementID
   const csvData = "Header1,Header2,Header3\nValue1,Value2,Value3"; // Example CSV data, replace with your logic
 
+  // Use the constructed URL for download
+  const fileUrl = getDownloadLink(appID, engagementID);
   const file = DriveApp.createFile('GeneratedReport.csv', csvData, MimeType.CSV);
-  const url = file.getDownloadUrl();
 
-  return url; // Return the download link for the generated CSV
+  const downloadLink = file.getDownloadUrl(); // Get the Google Drive download URL for the file
+  return downloadLink; // Return the link to be opened in a new tab
 }
+
