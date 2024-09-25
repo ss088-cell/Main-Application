@@ -33,21 +33,26 @@
 </head>
 <body>
 
-  <h1>Select an Application</h1>
+  <h1>Upload CSV and Generate Report</h1>
   
   <label for="appDropdown">Application:</label>
   <select id="appDropdown">
     <!-- Options will be loaded dynamically -->
   </select>
 
-  <button id="generateReportButton" onclick="generateReport()">Generate Report & Upload CSV</button>
+  <button id="generateReportButton" onclick="generateReport()">Generate Report</button>
 
   <p id="loading">Loading applications, please wait...</p>
   <div id="apiResponse">Generated Link: <a id="responseContent" href="#" target="_blank">None</a></div>
   
-  <!-- Display current date -->
   <div id="statusMessage"></div>
 
+  <h2>Upload CSV</h2>
+  <input type="file" id="csvFileInput" accept=".csv">
+  <button onclick="uploadCSV()">Upload CSV</button>
+
+  <div id="csvUploadMessage"></div>
+  
   <script>
     // Function to load applications into the dropdown
     function loadApplications() {
@@ -73,7 +78,7 @@
       }).getApplications();
     }
 
-    // Function to trigger the download, open the CSV in a new tab, and upload to Google Sheets
+    // Function to trigger the download and open the CSV in a new tab
     function generateReport() {
       let selectedValue = document.getElementById('appDropdown').value;
       let statusMessage = document.getElementById('statusMessage');
@@ -98,16 +103,44 @@
         responseElement.innerText = link;
         responseElement.href = link;
 
-        // Automatically open the generated link in a new tab to trigger CSV download
         window.open(link, '_blank');
 
-        // Upload the CSV to Google Sheets
-        google.script.run.withSuccessHandler(function(sheetLink) {
-          statusMessage.innerText = `CSV uploaded! View it here: ${sheetLink}`;
-          statusMessage.style.color = "green";
-        }).uploadCSVToSheet(link);
+        let today = new Date();
+        let date = today.getDate();
+        let month = today.getMonth() + 1;
+        let year = today.getFullYear();
+
+        statusMessage.innerText = `Report generated on: ${date}-${month}-${year}`;
+        statusMessage.style.color = "green";
 
       }).getDownloadLink(appId, engagementId);
+    }
+
+    // Function to upload and parse the CSV file
+    function uploadCSV() {
+      let csvFileInput = document.getElementById('csvFileInput');
+      let file = csvFileInput.files[0];
+
+      if (!file) {
+        document.getElementById('csvUploadMessage').innerText = "Please select a CSV file!";
+        return;
+      }
+
+      let reader = new FileReader();
+
+      reader.onload = function(event) {
+        let csvContent = event.target.result;
+
+        google.script.run.withSuccessHandler(function(sheetUrl) {
+          if (sheetUrl.startsWith("http")) {
+            document.getElementById('csvUploadMessage').innerHTML = `CSV Uploaded! View it <a href="${sheetUrl}" target="_blank">here</a>`;
+          } else {
+            document.getElementById('csvUploadMessage').innerText = sheetUrl; // Display error message
+          }
+        }).uploadCSVToSheet(csvContent);
+      };
+
+      reader.readAsText(file);
     }
 
     // Load the applications when the page loads
