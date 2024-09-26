@@ -35,17 +35,19 @@
     #toast {
       visibility: hidden;
       min-width: 250px;
+      max-width: 80%;
       background-color: #333;
       color: #fff;
       text-align: center;
       border-radius: 4px;
       padding: 16px;
       position: fixed;
-      z-index: 1;
+      z-index: 1000;
       left: 50%;
-      bottom: 30px;
-      transform: translateX(-50%);
+      top: 50%;
+      transform: translate(-50%, -50%);
       font-size: 17px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
     }
 
     #toast a {
@@ -54,9 +56,20 @@
       font-weight: bold;
     }
 
+    #toast .close-btn {
+      display: block;
+      margin-top: 20px;
+      background-color: #4CAF50;
+      color: #fff;
+      padding: 10px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
     #toast.show {
       visibility: visible;
-      animation: fadeInOut 3s;
+      animation: fadeInOut 5s;
     }
 
     @keyframes fadeInOut {
@@ -91,7 +104,10 @@
   </div>
 
   <!-- Toast notification -->
-  <div id="toast"></div>
+  <div id="toast">
+    <span id="toastMessage"></span>
+    <button class="close-btn" onclick="closeToast()">Close</button>
+  </div>
 
   <script>
     let teamName, appName, date, month, year;
@@ -187,7 +203,7 @@
         // Call the Apps Script function to process the CSV data
         google.script.run.withSuccessHandler(function(sheetUrl) {
           // Show the toast notification with the link to the new Google Sheet
-          showToast(`CSV uploaded and processed successfully! <a href="${sheetUrl}" target="_blank">View the Google Sheet</a>`);
+          showToast(`Report generated: <a href="${sheetUrl}" target="_blank">Link to report</a>`);
         }).uploadFiles(csvData, teamName, appName, date, month, year);
       };
 
@@ -197,9 +213,15 @@
     // Function to display the toast notification
     function showToast(message) {
       let toast = document.getElementById('toast');
-      toast.innerHTML = message;
+      document.getElementById('toastMessage').innerHTML = message;
       toast.className = "show";
-      setTimeout(function(){ toast.className = toast.className.replace("show", ""); }, 5000);
+    }
+
+    // Function to close the toast and refresh the page
+    function closeToast() {
+      let toast = document.getElementById('toast');
+      toast.className = toast.className.replace("show", "");
+      location.reload(); // Refresh the page
     }
 
     // Load the applications when the page loads
