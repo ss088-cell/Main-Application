@@ -56,3 +56,20 @@ function generateCSV(appID, engagementID) {
 
   return downloadLink; // Return the constructed download link
 }
+
+// Function to upload and process the CSV file
+function uploadFiles(csvData, team, appName, date, month, year) {
+  // Create a new Google Sheet
+  const sheetName = `Macroscope Scan ${team} ${appName} - ${date}-${month}-${year}`;
+  const spreadsheet = SpreadsheetApp.create(sheetName);
+  const sheet = spreadsheet.getActiveSheet();
+
+  // Split CSV data into rows and columns
+  const rows = Utilities.parseCsv(csvData);
+
+  // Write the CSV data into the sheet
+  sheet.getRange(1, 1, rows.length, rows[0].length).setValues(rows);
+
+  // Return the URL of the created Google Sheet
+  return spreadsheet.getUrl();
+}
