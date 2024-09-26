@@ -126,8 +126,8 @@
         anchor.click();
         document.body.removeChild(anchor);
 
-        // Final status message after download starts
-        statusMessage.innerText = ""; // Clear the notification after download
+        // Clear the notification after download
+        statusMessage.innerText = "";
 
         // Show the CSV upload section after download
         document.getElementById('csvUploadSection').style.display = 'block';
@@ -151,8 +151,12 @@
 
         // Call the Apps Script function to process the CSV data
         google.script.run.withSuccessHandler(function(sheetUrl) {
-          document.getElementById('statusMessage').innerText = `CSV uploaded and processed successfully! View the Google Sheet here: ${sheetUrl}`;
-          document.getElementById('statusMessage').style.color = "green";
+          // Show a pop-up notification with the link to the new Google Sheet
+          alert(`CSV uploaded and processed successfully!\nView the Google Sheet here: ${sheetUrl}`);
+
+          // Clear the status message
+          document.getElementById('statusMessage').innerText = "";
+
         }).uploadFiles(csvData, teamName, appName, date, month, year);
       };
 
