@@ -1,4 +1,4 @@
-\<!DOCTYPE html>
+<!DOCTYPE html>
 <html>
 <head>
   <base target="_top">
@@ -54,10 +54,13 @@
   <div id="csvUploadSection">
     <h2>Upload CSV</h2>
     <label for="csvUpload">Upload CSV:</label>
-    <input type="file" id="csvUpload" />
+    <input type="file" id="csvUpload" accept=".csv" />
+    <button onclick="handleCsvUpload()">Upload File</button>
   </div>
 
   <script>
+    let teamName, appName, date, month, year;
+
     // Function to load applications into the dropdown
     function loadApplications() {
       document.getElementById('loading').style.display = 'block'; // Show loading message
@@ -100,8 +103,8 @@
       let selectedIDs = JSON.parse(selectedValue);
       let appId = selectedIDs.appId;
       let engagementId = selectedIDs.engagementId;
-      let appName = selectedIDs.name; // Application name
-      let teamName = selectedIDs.team; // Team name
+      appName = selectedIDs.name; // Application name
+      teamName = selectedIDs.team; // Team name
 
       // Show a loading message while generating the report
       statusMessage.innerText = "Generating report, please wait...";
@@ -111,9 +114,9 @@
       google.script.run.withSuccessHandler(function(downloadUrl) {
         // Get the current date
         let today = new Date();
-        let date = today.getDate();
-        let month = today.getMonth() + 1;
-        let year = today.getFullYear();
+        date = today.getDate();
+        month = today.getMonth() + 1;
+        year = today.getFullYear();
 
         // Notify the user that the report generation is complete with the desired format
         const reportName = `Macroscope Scan ${teamName} ${appName} - ${date}-${month}-${year}`;
@@ -136,6 +139,30 @@
         document.getElementById('csvUploadSection').style.display = 'block';
 
       }).generateCSV(appId, engagementId);
+    }
+
+    // Function to handle CSV upload
+    function handleCsvUpload() {
+      let fileInput = document.getElementById('csvUpload');
+      let file = fileInput.files[0];
+      if (!file) {
+        document.getElementById('statusMessage').innerText = "Please select a CSV file to upload!";
+        document.getElementById('statusMessage').style.color = "red";
+        return;
+      }
+
+      let reader = new FileReader();
+      reader.onload = function(e) {
+        let csvData = e.target.result;
+
+        // Call the Apps Script function to process the CSV data
+        google.script.run.withSuccessHandler(function(sheetUrl) {
+          document.getElementById('statusMessage').innerText = `CSV uploaded and processed successfully! View the Google Sheet here: ${sheetUrl}`;
+          document.getElementById('statusMessage').style.color = "green";
+        }).uploadFiles(csvData, teamName, appName, date, month, year);
+      };
+
+      reader.readAsText(file);
     }
 
     // Load the applications when the page loads
