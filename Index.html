@@ -17,59 +17,42 @@
       margin: 10px 0;
       border-radius: 4px;
       border: 1px solid #ccc;
-      width: 100%;
+    }
+    #apiResponse, #statusMessage {
+      margin-top: 20px;
     }
     #loading {
       display: none;
       color: green;
     }
-    #statusMessage {
-      color: red;
-      margin-top: 20px;
-    }
-    #csvUploadSection {
-      display: none; /* Initially hidden */
-      margin-top: 20px;
-    }
   </style>
 </head>
 <body>
 
-  <h1>Generate CSV</h1> <!-- Updated heading -->
+  <h1>Generate CSV</h1>
 
-  <!-- Application dropdown -->
   <label for="appDropdown">Application:</label>
   <select id="appDropdown">
     <!-- Options will be loaded dynamically -->
   </select>
 
-  <!-- Generate CSV button -->
-  <button id="generateCsvButton" onclick="generateReport()">Generate CSV</button> <!-- Updated button text -->
+  <button id="generateReportButton" onclick="generateReport()">Generate CSV</button>
 
   <p id="loading">Loading applications, please wait...</p>
-  
+
   <div id="statusMessage"></div>
 
-  <!-- CSV Upload Section -->
-  <div id="csvUploadSection">
-    <h2>Upload CSV</h2>
-    <label for="csvUpload">Upload CSV:</label>
-    <input type="file" id="csvUpload" accept=".csv" />
-    <button onclick="handleCsvUpload()">Upload File</button>
-  </div>
+  <!-- Hidden file input for CSV upload -->
+  <input type="file" id="csvFileInput" style="display:none" accept=".csv" onchange="handleCsvUpload(event)">
 
   <script>
-    let teamName, appName, date, month, year;
-
     // Function to load applications into the dropdown
     function loadApplications() {
-      document.getElementById('loading').style.display = 'block'; // Show loading message
-      
+      document.getElementById('loading').style.display = 'block';
       google.script.run.withSuccessHandler(function(applications) {
-        document.getElementById('loading').style.display = 'none'; // Hide loading message
+        document.getElementById('loading').style.display = 'none';
 
         let dropdown = document.getElementById('appDropdown');
-        
         if (applications.length === 0) {
           document.getElementById('statusMessage').innerText = "No applications found!";
           return;
@@ -82,90 +65,72 @@
             engagementId: app.engagementId,
             name: app.name,
             team: app.team
-          }); // Store appID, engagementID, application name, and team name
-          option.text = app.name; // Application name as display text
+          });
+          option.text = app.name;
           dropdown.add(option);
         });
       }).getApplications();
     }
 
-    // Function to generate the report and provide status updates
+    // Function to generate the report
     function generateReport() {
       let selectedValue = document.getElementById('appDropdown').value;
       let statusMessage = document.getElementById('statusMessage');
 
       if (!selectedValue) {
         statusMessage.innerText = "Please select an application!";
-        statusMessage.style.color = "red";
         return;
       }
 
       let selectedIDs = JSON.parse(selectedValue);
       let appId = selectedIDs.appId;
       let engagementId = selectedIDs.engagementId;
-      appName = selectedIDs.name; // Application name
-      teamName = selectedIDs.team; // Team name
+      let appName = selectedIDs.name;
+      let teamName = selectedIDs.team;
 
-      // Show a loading message while generating the report
       statusMessage.innerText = "Generating report, please wait...";
-      statusMessage.style.color = "blue";
-
-      // Run the Apps Script function to generate the report
+      
       google.script.run.withSuccessHandler(function(downloadUrl) {
-        // Get the current date
-        let today = new Date();
-        date = today.getDate();
-        month = today.getMonth() + 1;
-        year = today.getFullYear();
-
-        // Notify the user that the report generation is complete with the desired format
-        const reportName = `Macroscope Scan ${teamName} ${appName} - ${date}-${month}-${year}`;
-        statusMessage.innerText = `Report generated for "${reportName}". Downloading report...`;
-        statusMessage.style.color = "green";
-
-        // Trigger the download of the report
         const anchor = document.createElement('a');
         anchor.href = downloadUrl;
-        anchor.download = `Report-${teamName}-${appName}-${date}-${month}-${year}.csv`; // Customize the download filename
+        anchor.download = `Report-${teamName}-${appName}.csv`;
         document.body.appendChild(anchor);
         anchor.click();
         document.body.removeChild(anchor);
 
-        // Final status message after download starts
-        statusMessage.innerText = `Report for "${reportName}" downloaded successfully!`;
-        statusMessage.style.color = "green";
-
-        // Show the CSV upload section after download
-        document.getElementById('csvUploadSection').style.display = 'block';
+        // After report download, trigger file input for CSV upload
+        document.getElementById('csvFileInput').click();
 
       }).generateCSV(appId, engagementId);
     }
 
     // Function to handle CSV upload
-    function handleCsvUpload() {
-      let fileInput = document.getElementById('csvUpload');
-      let file = fileInput.files[0];
-      if (!file) {
-        document.getElementById('statusMessage').innerText = "Please select a CSV file to upload!";
-        document.getElementById('statusMessage').style.color = "red";
-        return;
-      }
+    function handleCsvUpload(event) {
+      let file = event.target.files[0];
+      if (!file) return;
 
       let reader = new FileReader();
       reader.onload = function(e) {
         let csvData = e.target.result;
 
-        // Call the Apps Script function to process the CSV data
+        let selectedValue = document.getElementById('appDropdown').value;
+        let selectedIDs = JSON.parse(selectedValue);
+        let appName = selectedIDs.name;
+        let teamName = selectedIDs.team;
+
+        let today = new Date();
+        let date = today.getDate();
+        let month = today.getMonth() + 1;
+        let year = today.getFullYear();
+
         google.script.run.withSuccessHandler(function(sheetUrl) {
-          document.getElementById('statusMessage').innerText = `CSV uploaded and processed successfully! View the Google Sheet here: ${sheetUrl}`;
-          document.getElementById('statusMessage').style.color = "green";
+          window.open(sheetUrl, '_blank'); // Open the new Google Sheet in a popup
         }).uploadFiles(csvData, teamName, appName, date, month, year);
       };
 
       reader.readAsText(file);
     }
 
-    // Load the applications when the page loads
     document.addEventListener('DOMContentLoaded', loadApplications);
   </script>
 
