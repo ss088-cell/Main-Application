@@ -31,6 +31,38 @@
       display: none; /* Initially hidden */
       margin-top: 20px;
     }
+    /* Toast notification styles */
+    #toast {
+      visibility: hidden;
+      min-width: 250px;
+      background-color: #333;
+      color: #fff;
+      text-align: center;
+      border-radius: 4px;
+      padding: 16px;
+      position: fixed;
+      z-index: 1;
+      left: 50%;
+      bottom: 30px;
+      transform: translateX(-50%);
+      font-size: 17px;
+    }
+
+    #toast a {
+      color: #4CAF50;
+      text-decoration: none;
+      font-weight: bold;
+    }
+
+    #toast.show {
+      visibility: visible;
+      animation: fadeInOut 3s;
+    }
+
+    @keyframes fadeInOut {
+      0%, 100% { opacity: 0; }
+      10%, 90% { opacity: 1; }
+    }
   </style>
 </head>
 <body>
@@ -57,6 +89,9 @@
     <input type="file" id="csvUpload" accept=".csv" />
     <button onclick="handleCsvUpload()">Upload File</button>
   </div>
+
+  <!-- Toast notification -->
+  <div id="toast"></div>
 
   <script>
     let teamName, appName, date, month, year;
@@ -151,16 +186,20 @@
 
         // Call the Apps Script function to process the CSV data
         google.script.run.withSuccessHandler(function(sheetUrl) {
-          // Show a pop-up notification with the link to the new Google Sheet
-          alert(`CSV uploaded and processed successfully!\nView the Google Sheet here: ${sheetUrl}`);
-
-          // Clear the status message
-          document.getElementById('statusMessage').innerText = "";
-
+          // Show the toast notification with the link to the new Google Sheet
+          showToast(`CSV uploaded and processed successfully! <a href="${sheetUrl}" target="_blank">View the Google Sheet</a>`);
         }).uploadFiles(csvData, teamName, appName, date, month, year);
       };
 
       reader.readAsText(file);
+    }
+
+    // Function to display the toast notification
+    function showToast(message) {
+      let toast = document.getElementById('toast');
+      toast.innerHTML = message;
+      toast.className = "show";
+      setTimeout(function(){ toast.className = toast.className.replace("show", ""); }, 5000);
     }
 
     // Load the applications when the page loads
