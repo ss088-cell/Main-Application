@@ -27,7 +27,8 @@
       color: red;
       margin-top: 20px;
     }
-    #csvUpload {
+    #csvUploadSection {
+      display: none;
       margin-top: 20px;
     }
   </style>
@@ -56,10 +57,6 @@
   <label for="yearInput">Year:</label>
   <input type="text" id="yearInput" readonly />
 
-  <!-- CSV Upload -->
-  <label for="csvUpload">Upload CSV:</label>
-  <input type="file" id="csvUpload" />
-
   <!-- Generate CSV button -->
   <button id="generateCsvButton" onclick="generateCsv()">Generate CSV</button>
 
@@ -67,11 +64,17 @@
   
   <div id="statusMessage"></div>
 
+  <!-- CSV Upload Section -->
+  <div id="csvUploadSection">
+    <h2>Upload CSV</h2>
+    <label for="csvUpload">Upload CSV:</label>
+    <input type="file" id="csvUpload" />
+  </div>
+
   <script>
     // Function to load applications and populate input boxes
     function loadApplications() {
       document.getElementById('loading').style.display = 'block';
-      console.log("Fetching applications from server...");
       
       google.script.run.withSuccessHandler(function(applications) {
         document.getElementById('loading').style.display = 'none';
@@ -80,19 +83,6 @@
           document.getElementById('statusMessage').innerText = "No applications found!";
           return;
         }
-
-        let dropdown = document.getElementById('appDropdown');
-        applications.forEach(function(app) {
-          let option = document.createElement('option');
-          option.value = JSON.stringify({
-            appId: app.appId, 
-            engagementId: app.engagementId,
-            name: app.name,
-            team: app.team
-          }); 
-          option.text = app.name;
-          dropdown.add(option);
-        });
 
         // Auto-populate the first application's data
         if (applications.length > 0) {
@@ -109,26 +99,34 @@
       }).getApplications();
     }
 
-    // Function to handle CSV generation
+    // Function to handle CSV generation and download
     function generateCsv() {
       let statusMessage = document.getElementById('statusMessage');
-
-      // Check if a file has been uploaded
-      const csvFile = document.getElementById('csvUpload').files[0];
-      if (!csvFile) {
-        statusMessage.innerText = "Please upload a CSV file!";
-        statusMessage.style.color = "red";
-        return;
-      }
 
       // Display a generating message
       statusMessage.innerText = "Generating CSV, please wait...";
       statusMessage.style.color = "blue";
 
-      // (Insert logic for handling CSV upload and report generation)
+      // Run the Apps Script function to generate the CSV
+      google.script.run.withSuccessHandler(function(downloadUrl) {
+        
+        // Trigger the download of the report
+        const anchor = document.createElement('a');
+        anchor.href = downloadUrl;
+        anchor.download = `Report-${document.getElementById('teamInput').value}-${document.getElementById('appNameInput').value}-${document.getElementById('dateInput').value}-${document.getElementById('monthInput').value}-${document.getElementById('yearInput').value}.csv`; // Customize the download filename
+        document.body.appendChild(anchor);
+        anchor.click();
+        document.body.removeChild(anchor);
 
-      statusMessage.innerText = "CSV generated successfully!";
-      statusMessage.style.color = "green";
+        // Final status message after download starts
+        const reportName = `Macroscope Scan ${document.getElementById('teamInput').value} ${document.getElementById('appNameInput').value} - ${document.getElementById('dateInput').value}-${document.getElementById('monthInput').value}-${document.getElementById('yearInput').value}`;
+        statusMessage.innerText = `Report for "${reportName}" downloaded successfully!`;
+        statusMessage.style.color = "green";
+
+        // Show the CSV upload section after download
+        document.getElementById('csvUploadSection').style.display = 'block';
+
+      }).generateCSV();
     }
 
     // Load the applications when the page loads
