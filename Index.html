@@ -52,6 +52,21 @@
       padding: 20px;
       background-color: white;
     }
+    #downloadToast {
+      display: none;
+      width: 300px;
+      background-color: #333;
+      color: #fff;
+      text-align: left;
+      border-radius: 8px;
+      padding: 16px;
+      position: fixed;
+      z-index: 1;
+      top: 20px;
+      right: 20px;
+      font-size: 15px;
+      line-height: 1.5;
+    }
   </style>
 </head>
 <body>
@@ -86,7 +101,9 @@
   <div id="toast">Report Generated: <a href="#" id="reportLink" style="color: #4CAF50;">Link</a><br>Refresh the page for a new report.</div>
   
   <!-- Notification for downloading time -->
-  <div id="downloadToast" style="display:none;">Macroscope sometimes takes time to give back the report. Also, if the report is of a big size, it takes time to download. Please wait for the download to start. Thank you.</div>
+  <div id="downloadToast">
+    Macroscope sometimes takes time to give back the report. Also, if the report is of a big size, it takes time to download. Please wait for the download to start. Thank you.
+  </div>
 
   <script>
     let teamName, appName, date, month, year;
