@@ -19,7 +19,8 @@
       margin: 10px 0;
       border-radius: 4px;
       border: 1px solid #ccc;
-      width: calc(100% - 24px); /* Adjust width for padding */
+      max-width: 400px; /* Set a maximum width for dropdowns and buttons */
+      width: 100%; /* Keep it responsive */
       transition: transform 0.2s ease-in-out;
     }
 
@@ -99,11 +100,11 @@
     }
 
     #searchInput {
-      width: calc(100% - 24px); /* Adjust width for padding */
       padding: 10px;
-      margin-bottom: 10px;
-      border-radius: 4px;
       border: 1px solid #ccc;
+      border-radius: 4px;
+      width: 100%; /* Full width */
+      margin-bottom: 10px; /* Space between search and dropdown */
     }
   </style>
 </head>
@@ -112,7 +113,7 @@
   <h1>Generate CSV</h1>
 
   <label for="searchInput">Search Application:</label>
-  <input type="text" id="searchInput" placeholder="Type to search..." onkeyup="filterApplications()">
+  <input type="text" id="searchInput" onkeyup="filterApplications()" placeholder="Search for applications..." />
 
   <label for="appDropdown">Application:</label>
   <select id="appDropdown"></select>
@@ -149,6 +150,7 @@
         document.getElementById('loading').style.display = 'none';
 
         let dropdown = document.getElementById('appDropdown');
+        dropdown.innerHTML = ''; // Clear existing options
         
         if (applications.length === 0) {
           document.getElementById('statusMessage').innerText = "No applications found!";
@@ -170,13 +172,17 @@
     }
 
     function filterApplications() {
-      const searchInput = document.getElementById("searchInput").value.toLowerCase();
-      const dropdown = document.getElementById("appDropdown");
-      const options = dropdown.options;
+      let input = document.getElementById('searchInput').value.toLowerCase();
+      let dropdown = document.getElementById('appDropdown');
+      let options = dropdown.options;
 
       for (let i = 0; i < options.length; i++) {
-        const option = options[i];
-        option.style.display = option.text.toLowerCase().includes(searchInput) ? "block" : "none";
+        let option = options[i];
+        if (option.text.toLowerCase().indexOf(input) > -1) {
+          option.style.display = ""; // Show matching option
+        } else {
+          option.style.display = "none"; // Hide non-matching option
+        }
       }
     }
 
@@ -276,13 +282,10 @@
       document.getElementById('loadingAnimation').style.display = 'none';
     }
 
-    function hideToast() {
-      let toast = document.getElementById("toast");
-      toast.style.display = "none";
-    }
-
-    document.addEventListener('DOMContentLoaded', loadApplications);
+    // Load applications when the page loads
+    window.onload = function() {
+      loadApplications();
+    };
   </script>
-
 </body>
 </html>
