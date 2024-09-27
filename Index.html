@@ -32,7 +32,7 @@
       margin-top: 20px;
     }
     #toast {
-      visibility: hidden;
+      display: none;
       min-width: 250px;
       background-color: #333;
       color: #fff;
@@ -43,20 +43,8 @@
       z-index: 1;
       left: 50%;
       transform: translateX(-50%);
-      bottom: 30px;
+      top: 50%;
       font-size: 17px;
-    }
-    #toast.show {
-      visibility: visible;
-      animation: fadein 0.5s, fadeout 0.5s 2.5s;
-    }
-    @keyframes fadein {
-      from {bottom: 0; opacity: 0;} 
-      to {bottom: 30px; opacity: 1;}
-    }
-    @keyframes fadeout {
-      from {bottom: 30px; opacity: 1;} 
-      to {bottom: 0; opacity: 0;}
     }
     /* Animation placeholder for generating report */
     #animation {
@@ -64,23 +52,6 @@
       text-align: center;
       padding: 20px;
       background-color: white;
-    }
-    #smallToast {
-      visibility: hidden;
-      min-width: 250px;
-      background-color: #333;
-      color: #fff;
-      text-align: center;
-      border-radius: 2px;
-      padding: 16px;
-      position: fixed;
-      z-index: 1;
-      right: 10px;
-      top: 10px;
-      font-size: 14px;
-    }
-    #smallToast.show {
-      visibility: visible;
     }
   </style>
 </head>
@@ -114,9 +85,6 @@
 
   <!-- Toast Notification -->
   <div id="toast">Report Generated: <a href="#" id="reportLink" style="color: #4CAF50;">Link</a>. Refresh the page for a new report.</div>
-
-  <!-- Small Toast Notification -->
-  <div id="smallToast">Macroscope sometimes takes time to give back report. Your report will be downloaded soon.</div>
 
   <script>
     let teamName, appName, date, month, year;
@@ -170,9 +138,6 @@
       statusMessage.innerText = "Generating report, please wait...";
       statusMessage.style.color = "blue";
 
-      // Show the small toast on the upper right corner
-      showSmallToast();
-
       // Run the Apps Script function to generate the report
       google.script.run.withSuccessHandler(function(downloadUrl) {
         // Get the current date
@@ -191,15 +156,7 @@
 
         // Show the CSV upload section after download
         document.getElementById('csvUploadSection').style.display = 'block';
-
-        // Show the generating report animation
-        showAnimation();
-
-        // After animation, show the report generated toast
-        setTimeout(() => {
-          showToast(`Report Generated: <a href="${downloadUrl}" id="reportLink" style="color: #4CAF50;">Link</a>`);
-        }, 2000);
-
+        
       }).generateCSV(appId, engagementId);
     }
 
@@ -217,8 +174,12 @@
       reader.onload = function(e) {
         let csvData = e.target.result;
 
+        // Show the animation during CSV upload processing
+        showAnimation();
+
         // Call the Apps Script function to process the CSV data
         google.script.run.withSuccessHandler(function(sheetUrl) {
+          hideAnimation();
           showToast(`CSV uploaded and processed successfully! <a href="${sheetUrl}" target="_blank" style="color: #4CAF50;">View the Google Sheet</a>`);
         }).uploadFiles(csvData, teamName, appName, date, month, year);
       };
@@ -230,33 +191,17 @@
     function showToast(message) {
       let toast = document.getElementById("toast");
       toast.innerHTML = message;
-      toast.className = "show";
-
-      // Remove the small toast once the main toast is shown
-      hideSmallToast();
-
-      // Make the UI background white when toast is visible
-      document.body.style.backgroundColor = "white";
-    }
-
-    // Function to show small toast on the upper right corner
-    function showSmallToast() {
-      let smallToast = document.getElementById("smallToast");
-      smallToast.className = "show";
-    }
-
-    // Function to hide the small toast
-    function hideSmallToast() {
-      let smallToast = document.getElementById("smallToast");
-      smallToast.className = "";
+      toast.style.display = "block";
     }
 
     // Function to show the animation
     function showAnimation() {
       document.getElementById('animation').style.display = 'block';
-      setTimeout(() => {
-        document.getElementById('animation').style.display = 'none';
-      }, 2000); // Show animation for 2 seconds
+    }
+
+    // Function to hide the animation
+    function hideAnimation() {
+      document.getElementById('animation').style.display = 'none';
     }
 
     // Load the applications when the page loads
