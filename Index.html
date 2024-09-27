@@ -80,6 +80,23 @@
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
     }
+
+    #macroscopeNotification {
+      display: none;
+      min-width: 250px;
+      background-color: #4CAF50;
+      color: #fff;
+      text-align: left;
+      border-radius: 4px;
+      padding: 16px;
+      position: fixed;
+      z-index: 1;
+      right: 30px;
+      top: 100px; /* Below the toast notification */
+      font-size: 17px;
+      white-space: normal; /* Allows wrapping */
+      max-width: 300px; /* Maximum width for the notification */
+    }
   </style>
 </head>
 <body>
@@ -108,6 +125,8 @@
   </div>
 
   <div id="toast"></div>
+  
+  <div id="macroscopeNotification"></div> <!-- Macroscope Notification -->
 
   <script>
     let teamName, appName, date, month, year;
@@ -213,10 +232,18 @@
     }
 
     function showMacroscopeToast() {
-      showToast("Macroscope sometimes takes time to give back a report. If the report is big, it may take time to download. Please wait for the download to start. Thank you.");
+      let macroscopeNotification = document.getElementById("macroscopeNotification");
+      macroscopeNotification.innerText = "Macroscope sometimes takes time to give back a report. If the report is big, it may take time to download. Please wait for the download to start. Thank you.";
+      macroscopeNotification.style.display = "block";
+
       setTimeout(function() {
-        hideToast();
+        hideMacroscopeToast();
       }, 40000);
+    }
+
+    function hideMacroscopeToast() {
+      let macroscopeNotification = document.getElementById("macroscopeNotification");
+      macroscopeNotification.style.display = "none";
     }
 
     function showAnimation() {
