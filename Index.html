@@ -31,11 +31,9 @@
       display: none; /* Initially hidden */
       margin-top: 20px;
     }
-    /* Toast styling */
-    #toast {
+    .toast {
       visibility: hidden;
       min-width: 250px;
-      margin-left: -125px;
       background-color: #333;
       color: #fff;
       text-align: center;
@@ -44,35 +42,15 @@
       position: fixed;
       z-index: 1;
       left: 50%;
-      bottom: 50%;
-      font-size: 17px;
+      top: 50%;
+      transform: translate(-50%, -50%);
     }
-    #toast.show {
+    .toast a {
+      color: #4CAF50;
+      text-decoration: underline;
+    }
+    .toast.show {
       visibility: visible;
-      animation: fadein 0.5s, fadeout 0.5s 2.5s;
-    }
-    #toast .close {
-      margin-left: 15px;
-      color: #aaa;
-      font-weight: bold;
-      float: right;
-      font-size: 22px;
-      line-height: 20px;
-      cursor: pointer;
-      transition: 0.3s;
-    }
-    #toast .close:hover {
-      color: white;
-    }
-    /* Animations */
-    @keyframes fadein {
-      from {bottom: 0; opacity: 0;} 
-      to {bottom: 50%; opacity: 1;}
-    }
-
-    @keyframes fadeout {
-      from {bottom: 50%; opacity: 1;} 
-      to {bottom: 0; opacity: 0;}
     }
   </style>
 </head>
@@ -101,10 +79,9 @@
     <button onclick="handleCsvUpload()">Upload File</button>
   </div>
 
-  <!-- Toast notification -->
-  <div id="toast">
+  <!-- Toast Notification -->
+  <div id="toast" class="toast">
     <span id="toastMessage"></span>
-    <span class="close" onclick="closeToast()">&times;</span>
   </div>
 
   <script>
@@ -167,9 +144,6 @@
         month = today.getMonth() + 1;
         year = today.getFullYear();
 
-        // Notify the user that the report generation is complete with the desired format
-        const reportName = `Macroscope Scan ${teamName} ${appName} - ${date}-${month}-${year}`;
-
         // Trigger the download of the report
         const anchor = document.createElement('a');
         anchor.href = downloadUrl;
@@ -200,25 +174,18 @@
 
         // Call the Apps Script function to process the CSV data
         google.script.run.withSuccessHandler(function(sheetUrl) {
-          // Display the toast notification
-          showToast(`Report generated: <a href="${sheetUrl}" target="_blank">Link to report</a>`);
+          showToast(`Report Generated: <a href="${sheetUrl}" target="_blank">Link</a><br>Refresh the page for new report`);
         }).uploadFiles(csvData, teamName, appName, date, month, year);
       };
 
       reader.readAsText(file);
     }
 
-    // Function to show toast notification
+    // Function to show the toast notification
     function showToast(message) {
-      let toast = document.getElementById('toast');
-      let toastMessage = document.getElementById('toastMessage');
-      toastMessage.innerHTML = message;
-      toast.className = "show";
-    }
-
-    // Function to close the toast and redirect to the application's starting page
-    function closeToast() {
-      window.location.href = "/your-starting-page-url"; // Replace with the correct URL
+      const toast = document.getElementById('toast');
+      document.getElementById('toastMessage').innerHTML = message;
+      toast.className = "toast show";
     }
 
     // Load the applications when the page loads
@@ -227,4 +194,5 @@
 
 </body>
 </html>
+
 
