@@ -13,40 +13,41 @@
       color: #4CAF50;
     }
 
-    .dropdown {
+    .custom-dropdown {
       position: relative;
       display: inline-block;
       width: 100%;
-      max-width: 400px;
+      max-width: 400px; /* Set a maximum width for dropdown */
     }
 
-    .dropdown input {
-      font-size: 16px;
-      padding: 10px;
-      margin: 10px 0;
-      border-radius: 4px;
-      border: 1px solid #ccc;
+    .dropdown-search {
       width: 100%;
+      box-sizing: border-box;
+      padding: 10px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      margin-bottom: 10px;
     }
 
-    .custom-dropdown {
-      display: none;
+    .dropdown-list {
       position: absolute;
       background-color: #fff;
       border: 1px solid #ccc;
+      border-radius: 4px;
       max-height: 200px;
       overflow-y: auto;
-      z-index: 1;
       width: 100%;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      display: none; /* Hidden by default */
+      z-index: 100;
     }
 
-    .custom-dropdown div {
+    .dropdown-list .dropdown-item {
       padding: 10px;
       cursor: pointer;
     }
 
-    .custom-dropdown div:hover {
+    .dropdown-list .dropdown-item:hover {
       background-color: #f1f1f1;
     }
 
@@ -58,19 +59,6 @@
     #statusMessage {
       color: red;
       margin-top: 20px;
-    }
-
-    #csvUploadSection {
-      display: none;
-      margin-top: 20px;
-    }
-
-    #loadingAnimation {
-      display: none;
-      text-align: center;
-      padding: 20px;
-      color: #4CAF50;
-      font-size: 18px;
     }
 
     .loading-animation {
@@ -88,37 +76,12 @@
       100% { transform: rotate(360deg); }
     }
 
-    #toast {
+    #loadingAnimation {
       display: none;
-      min-width: 250px;
-      background-color: #333;
-      color: #fff;
       text-align: center;
-      border-radius: 2px;
-      padding: 16px;
-      position: fixed;
-      z-index: 1;
-      right: 30px;
-      top: 30px;
-      font-size: 17px;
-      white-space: pre-line;
-    }
-
-    #macroscopeNotification {
-      display: none;
-      min-width: 250px;
-      background-color: #4CAF50;
-      color: #fff;
-      text-align: left;
-      border-radius: 4px;
-      padding: 16px;
-      position: fixed;
-      z-index: 1;
-      right: 30px;
-      top: 0;
-      font-size: 17px;
-      white-space: normal;
-      max-width: 300px;
+      padding: 20px;
+      color: #4CAF50;
+      font-size: 18px;
     }
   </style>
 </head>
@@ -126,108 +89,107 @@
 
   <h1>Generate CSV</h1>
 
-  <div class="dropdown">
-    <label for="appSearch">Application:</label>
-    <input type="text" id="appSearch" placeholder="Search applications..." onkeyup="filterApplications()" autocomplete="off" />
-    <div id="appDropdown" class="custom-dropdown"></div>
+  <label for="appDropdown">Application:</label>
+  <div class="custom-dropdown">
+    <input type="text" id="dropdownSearch" class="dropdown-search" placeholder="Search applications..." onkeyup="filterDropdown()" onclick="toggleDropdown()" readonly />
+    <div id="dropdownList" class="dropdown-list"></div>
   </div>
 
   <button id="generateCsvButton" onclick="generateReport()">Generate CSV</button>
 
   <p id="loading">Loading applications, please wait...</p>
-  
   <div id="statusMessage"></div>
-
-  <div id="csvUploadSection">
-    <h2>Upload CSV</h2>
-    <label for="csvUpload">Upload CSV:</label>
-    <input type="file" id="csvUpload" accept=".csv" />
-    <button onclick="handleCsvUpload()">Upload File</button>
-  </div>
-
   <div id="loadingAnimation">
     <div class="loading-animation"></div>
     <p>Generating Report...</p>
   </div>
 
-  <div id="toast"></div>
-  
-  <div id="macroscopeNotification"></div>
-
   <script>
-    let teamName, appName, date, month, year, applications = [];
+    let teamName, appName, date, month, year;
+    let applicationsData = []; // Store applications data
 
     function loadApplications() {
       document.getElementById('loading').style.display = 'block';
-      
-      google.script.run.withSuccessHandler(function(apps) {
-        applications = apps;
+
+      google.script.run.withSuccessHandler(function(applications) {
         document.getElementById('loading').style.display = 'none';
 
         if (applications.length === 0) {
           document.getElementById('statusMessage').innerText = "No applications found!";
           return;
         }
-        populateDropdown(applications);
+
+        applicationsData = applications; // Save the data for future use
+        renderDropdownList(applications);
       }).getApplications();
     }
 
-    function populateDropdown(apps) {
-      const dropdown = document.getElementById('appDropdown');
-      dropdown.innerHTML = ''; // Clear previous entries
+    // Populate the dropdown with application data
+    function renderDropdownList(applications) {
+      const dropdownList = document.getElementById('dropdownList');
+      dropdownList.innerHTML = ''; // Clear existing options
 
-      apps.forEach(function(app) {
-        const optionDiv = document.createElement('div');
-        optionDiv.innerText = app.name;
-        optionDiv.onclick = function() {
-          selectApplication(app);
-        };
-        dropdown.appendChild(optionDiv);
+      applications.forEach(function(app) {
+        let option = document.createElement('div');
+        option.classList.add('dropdown-item');
+        option.dataset.appId = app.appId;
+        option.dataset.engagementId = app.engagementId;
+        option.dataset.name = app.name;
+        option.dataset.team = app.team;
+        option.innerText = app.name;
+        option.onclick = selectApplication;
+        dropdownList.appendChild(option);
       });
-
-      dropdown.style.display = 'block'; // Show dropdown
     }
 
-    function selectApplication(app) {
-      document.getElementById('appSearch').value = app.name; // Set input value
-      teamName = app.team; // Set team name
-      appName = app.name; // Set app name
-      document.getElementById('appDropdown').style.display = 'none'; // Hide dropdown
+    // Toggle the dropdown list visibility
+    function toggleDropdown() {
+      const dropdownList = document.getElementById('dropdownList');
+      dropdownList.style.display = (dropdownList.style.display === 'none' || !dropdownList.style.display) ? 'block' : 'none';
     }
 
-    function filterApplications() {
-      const searchInput = document.getElementById('appSearch').value.toLowerCase();
-      const dropdown = document.getElementById('appDropdown');
-      const filteredApps = applications.filter(app => app.name.toLowerCase().includes(searchInput));
+    // Filter dropdown based on search input
+    function filterDropdown() {
+      const searchValue = document.getElementById('dropdownSearch').value.toLowerCase();
+      const dropdownItems = document.querySelectorAll('.dropdown-item');
 
-      dropdown.innerHTML = ''; // Clear dropdown
-      filteredApps.forEach(app => {
-        const optionDiv = document.createElement('div');
-        optionDiv.innerText = app.name;
-        optionDiv.onclick = function() {
-          selectApplication(app);
-        };
-        dropdown.appendChild(optionDiv);
+      dropdownItems.forEach(function(item) {
+        const itemText = item.innerText.toLowerCase();
+        item.style.display = itemText.includes(searchValue) ? 'block' : 'none';
       });
+    }
 
-      dropdown.style.display = filteredApps.length > 0 ? 'block' : 'none'; // Show/hide dropdown
+    // When an application is selected
+    function selectApplication() {
+      const selectedApp = this.dataset;
+      document.getElementById('dropdownSearch').value = selectedApp.name;
+      appName = selectedApp.name;
+      teamName = selectedApp.team;
+      toggleDropdown(); // Hide dropdown
+
+      // Save selected application ID and engagement ID for CSV generation
+      document.getElementById('dropdownSearch').dataset.appId = selectedApp.appId;
+      document.getElementById('dropdownSearch').dataset.engagementId = selectedApp.engagementId;
     }
 
     function generateReport() {
-      if (!appName) {
-        document.getElementById('statusMessage').innerText = "Please select an application!";
-        document.getElementById('statusMessage').style.color = "red";
+      let appId = document.getElementById('dropdownSearch').dataset.appId;
+      let engagementId = document.getElementById('dropdownSearch').dataset.engagementId;
+      let statusMessage = document.getElementById('statusMessage');
+
+      if (!appId || !engagementId) {
+        statusMessage.innerText = "Please select an application!";
+        statusMessage.style.color = "red";
         return;
       }
 
-      const statusMessage = document.getElementById('statusMessage');
       statusMessage.innerText = "Generating CSV, please wait...";
       statusMessage.style.color = "blue";
 
       document.getElementById('loadingAnimation').style.display = 'block';
 
       google.script.run.withSuccessHandler(function(downloadUrl) {
-        const today = new Date();
+        let today = new Date();
         date = today.getDate();
         month = today.getMonth() + 1;
         year = today.getFullYear();
@@ -241,62 +203,18 @@
 
         statusMessage.innerText = "";
         document.getElementById('loadingAnimation').style.display = 'none';
-        document.getElementById('csvUploadSection').style.display = 'block';
-
-        showMacroscopeToast();
       }).generateCSV(appId, engagementId);
     }
 
-    function handleCsvUpload() {
-      let fileInput = document.getElementById('csvUpload');
-      let file = fileInput.files[0];
-      if (!file) {
-        document.getElementById('statusMessage').innerText = "Please select a CSV file to upload!";
-        document.getElementById('statusMessage').style.color = "red";
-        return;
+    // Close the dropdown if clicked outside
+    window.onclick = function(event) {
+      if (!event.target.matches('.dropdown-search')) {
+        document.getElementById('dropdownList').style.display = 'none';
       }
-
-      let reader = new FileReader();
-      reader.onload = function(e) {
-        let csvData = e.target.result;
-
-        showAnimation();
-
-        google.script.run.withSuccessHandler(function(sheetUrl) {
-          hideAnimation();
-          showToast(`Report Generated: <a href="${sheetUrl}" target="_blank" style="color: #4CAF50;">Link</a><br>Refresh the page for a new report.`);
-        }).uploadFiles(csvData, teamName, appName, date, month, year);
-      };
-
-      reader.readAsText(file);
     }
 
-    function showToast(message) {
-      let toast = document.getElementById("toast");
-      toast.innerHTML = message;
-      toast.style.display = "block";
-    }
-
-    function showMacroscopeToast() {
-      let macroscopeNotification = document.getElementById("macroscopeNotification");
-      macroscopeNotification.innerText = "Macroscope sometimes takes time to give back a report. If the report is big, it may take time to download. Please wait for the download to start. Thank you.";
-      macroscopeNotification.style.display = "block";
-
-      setTimeout(function() {
-        macroscopeNotification.style.display = "none"; // Hide after a period
-      }, 40000);
-    }
-
-    // Load applications when the page is loaded
-    window.onload = loadApplications;
-
-    function showAnimation() {
-      document.getElementById("loadingAnimation").style.display = "block";
-    }
-
-    function hideAnimation() {
-      document.getElementById("loadingAnimation").style.display = "none";
-    }
+    document.addEventListener('DOMContentLoaded', loadApplications);
   </script>
+
 </body>
 </html>
