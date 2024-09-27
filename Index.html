@@ -13,19 +13,41 @@
       color: #4CAF50;
     }
 
-    select, button, input {
+    .dropdown {
+      position: relative;
+      display: inline-block;
+      width: 100%;
+      max-width: 400px;
+    }
+
+    .dropdown input {
       font-size: 16px;
       padding: 10px;
       margin: 10px 0;
       border-radius: 4px;
       border: 1px solid #ccc;
-      max-width: 400px; /* Set a maximum width for dropdowns and buttons */
-      width: 100%; /* Keep it responsive */
-      transition: transform 0.2s ease-in-out;
+      width: 100%;
     }
 
-    select:hover, button:hover, input:hover {
-      transform: scale(1.05);
+    .custom-dropdown {
+      display: none;
+      position: absolute;
+      background-color: #fff;
+      border: 1px solid #ccc;
+      max-height: 200px;
+      overflow-y: auto;
+      z-index: 1;
+      width: 100%;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .custom-dropdown div {
+      padding: 10px;
+      cursor: pointer;
+    }
+
+    .custom-dropdown div:hover {
+      background-color: #f1f1f1;
     }
 
     #loading {
@@ -93,18 +115,10 @@
       position: fixed;
       z-index: 1;
       right: 30px;
-      top: 0; /* Positioned at the topmost right corner */
+      top: 0;
       font-size: 17px;
-      white-space: normal; /* Allows wrapping */
-      max-width: 300px; /* Maximum width for the notification */
-    }
-
-    #searchInput {
-      padding: 10px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      width: 100%; /* Full width */
-      margin-bottom: 10px; /* Space between search and dropdown */
+      white-space: normal;
+      max-width: 300px;
     }
   </style>
 </head>
@@ -112,11 +126,11 @@
 
   <h1>Generate CSV</h1>
 
-  <label for="searchInput">Search Application:</label>
-  <input type="text" id="searchInput" onkeyup="filterApplications()" placeholder="Search for applications..." />
-
-  <label for="appDropdown">Application:</label>
-  <select id="appDropdown"></select>
+  <div class="dropdown">
+    <label for="appSearch">Application:</label>
+    <input type="text" id="appSearch" placeholder="Search applications..." onkeyup="filterApplications()" autocomplete="off" />
+    <div id="appDropdown" class="custom-dropdown"></div>
+  </div>
 
   <button id="generateCsvButton" onclick="generateReport()">Generate CSV</button>
 
@@ -138,77 +152,82 @@
 
   <div id="toast"></div>
   
-  <div id="macroscopeNotification"></div> <!-- Macroscope Notification -->
+  <div id="macroscopeNotification"></div>
 
   <script>
-    let teamName, appName, date, month, year;
+    let teamName, appName, date, month, year, applications = [];
 
     function loadApplications() {
       document.getElementById('loading').style.display = 'block';
       
-      google.script.run.withSuccessHandler(function(applications) {
+      google.script.run.withSuccessHandler(function(apps) {
+        applications = apps;
         document.getElementById('loading').style.display = 'none';
 
-        let dropdown = document.getElementById('appDropdown');
-        dropdown.innerHTML = ''; // Clear existing options
-        
         if (applications.length === 0) {
           document.getElementById('statusMessage').innerText = "No applications found!";
           return;
         }
-        
-        applications.forEach(function(app) {
-          let option = document.createElement('option');
-          option.value = JSON.stringify({
-            appId: app.appId, 
-            engagementId: app.engagementId,
-            name: app.name,
-            team: app.team
-          });
-          option.text = app.name;
-          dropdown.add(option);
-        });
+        populateDropdown(applications);
       }).getApplications();
     }
 
-    function filterApplications() {
-      let input = document.getElementById('searchInput').value.toLowerCase();
-      let dropdown = document.getElementById('appDropdown');
-      let options = dropdown.options;
+    function populateDropdown(apps) {
+      const dropdown = document.getElementById('appDropdown');
+      dropdown.innerHTML = ''; // Clear previous entries
 
-      for (let i = 0; i < options.length; i++) {
-        let option = options[i];
-        if (option.text.toLowerCase().indexOf(input) > -1) {
-          option.style.display = ""; // Show matching option
-        } else {
-          option.style.display = "none"; // Hide non-matching option
-        }
-      }
+      apps.forEach(function(app) {
+        const optionDiv = document.createElement('div');
+        optionDiv.innerText = app.name;
+        optionDiv.onclick = function() {
+          selectApplication(app);
+        };
+        dropdown.appendChild(optionDiv);
+      });
+
+      dropdown.style.display = 'block'; // Show dropdown
+    }
+
+    function selectApplication(app) {
+      document.getElementById('appSearch').value = app.name; // Set input value
+      teamName = app.team; // Set team name
+      appName = app.name; // Set app name
+      document.getElementById('appDropdown').style.display = 'none'; // Hide dropdown
+    }
+
+    function filterApplications() {
+      const searchInput = document.getElementById('appSearch').value.toLowerCase();
+      const dropdown = document.getElementById('appDropdown');
+      const filteredApps = applications.filter(app => app.name.toLowerCase().includes(searchInput));
+
+      dropdown.innerHTML = ''; // Clear dropdown
+      filteredApps.forEach(app => {
+        const optionDiv = document.createElement('div');
+        optionDiv.innerText = app.name;
+        optionDiv.onclick = function() {
+          selectApplication(app);
+        };
+        dropdown.appendChild(optionDiv);
+      });
+
+      dropdown.style.display = filteredApps.length > 0 ? 'block' : 'none'; // Show/hide dropdown
     }
 
     function generateReport() {
-      let selectedValue = document.getElementById('appDropdown').value;
-      let statusMessage = document.getElementById('statusMessage');
-
-      if (!selectedValue) {
-        statusMessage.innerText = "Please select an application!";
-        statusMessage.style.color = "red";
+      if (!appName) {
+        document.getElementById('statusMessage').innerText = "Please select an application!";
+        document.getElementById('statusMessage').style.color = "red";
         return;
       }
 
-      let selectedIDs = JSON.parse(selectedValue);
-      let appId = selectedIDs.appId;
-      let engagementId = selectedIDs.engagementId;
-      appName = selectedIDs.name;
-      teamName = selectedIDs.team;
-
+      const statusMessage = document.getElementById('statusMessage');
       statusMessage.innerText = "Generating CSV, please wait...";
       statusMessage.style.color = "blue";
 
       document.getElementById('loadingAnimation').style.display = 'block';
 
       google.script.run.withSuccessHandler(function(downloadUrl) {
-        let today = new Date();
+        const today = new Date();
         date = today.getDate();
         month = today.getMonth() + 1;
         year = today.getFullYear();
@@ -221,10 +240,9 @@
         document.body.removeChild(anchor);
 
         statusMessage.innerText = "";
-
         document.getElementById('loadingAnimation').style.display = 'none';
         document.getElementById('csvUploadSection').style.display = 'block';
-        
+
         showMacroscopeToast();
       }).generateCSV(appId, engagementId);
     }
@@ -265,27 +283,20 @@
       macroscopeNotification.style.display = "block";
 
       setTimeout(function() {
-        hideMacroscopeToast();
-      }, 8000); // Change to 8 seconds
+        macroscopeNotification.style.display = "none"; // Hide after a period
+      }, 40000);
     }
 
-    function hideMacroscopeToast() {
-      let macroscopeNotification = document.getElementById("macroscopeNotification");
-      macroscopeNotification.style.display = "none";
-    }
+    // Load applications when the page is loaded
+    window.onload = loadApplications;
 
     function showAnimation() {
-      document.getElementById('loadingAnimation').style.display = 'block';
+      document.getElementById("loadingAnimation").style.display = "block";
     }
 
     function hideAnimation() {
-      document.getElementById('loadingAnimation').style.display = 'none';
+      document.getElementById("loadingAnimation").style.display = "none";
     }
-
-    // Load applications when the page loads
-    window.onload = function() {
-      loadApplications();
-    };
   </script>
 </body>
 </html>
