@@ -154,9 +154,12 @@
         anchor.click();
         document.body.removeChild(anchor);
 
+        // Clear the status message
+        statusMessage.innerText = "";
+
         // Show the CSV upload section after download
         document.getElementById('csvUploadSection').style.display = 'block';
-        
+
       }).generateCSV(appId, engagementId);
     }
 
