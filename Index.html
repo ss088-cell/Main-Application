@@ -174,9 +174,8 @@
       appName = selectedIDs.name;
       teamName = selectedIDs.team;
 
-      statusMessage.innerText = "Generating CSV, please wait...";
-      statusMessage.style.color = "blue";
-
+      // Removed status message text
+      statusMessage.innerText = "";
       document.getElementById('loadingAnimation').style.display = 'block';
       document.querySelector('#loadingAnimation p').innerText = 'Generating CSV...'; // Updated animation text
 
