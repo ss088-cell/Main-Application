@@ -5,12 +5,14 @@
   <style>
     body {
       font-family: Arial, sans-serif;
-      background-color: #f0f8ff; /* Updated background color */
+      background-color: #e3f2fd;
       padding: 20px;
     }
+
     h1 {
       color: #4CAF50;
     }
+
     select, button, input {
       font-size: 16px;
       padding: 10px;
@@ -18,24 +20,51 @@
       border-radius: 4px;
       border: 1px solid #ccc;
       width: 100%;
-      transition: all 0.3s ease; /* Animation for buttons and dropdown */
+      transition: transform 0.2s ease-in-out;
     }
+
     select:hover, button:hover, input:hover {
-      background-color: #e0f7fa; /* Light blue background on hover */
-      border-color: #4CAF50; /* Change border color on hover */
+      transform: scale(1.05);
     }
+
     #loading {
       display: none;
       color: green;
     }
+
     #statusMessage {
       color: red;
       margin-top: 20px;
     }
+
     #csvUploadSection {
-      display: none; /* Initially hidden */
+      display: none;
       margin-top: 20px;
     }
+
+    #loadingAnimation {
+      display: none;
+      text-align: center;
+      padding: 20px;
+      color: #4CAF50;
+      font-size: 18px;
+    }
+
+    .loading-animation {
+      width: 50px;
+      height: 50px;
+      margin: 0 auto;
+      border: 5px solid #f3f3f3;
+      border-radius: 50%;
+      border-top: 5px solid #4CAF50;
+      animation: spin 2s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
     #toast {
       display: none;
       min-width: 250px;
@@ -46,54 +75,43 @@
       padding: 16px;
       position: fixed;
       z-index: 1;
-      left: 50%;
-      transform: translateX(-50%);
-      top: 50%;
+      right: 30px;
+      top: 30px;
       font-size: 17px;
+      white-space: pre-line;
     }
-    /* Macroscope Notification */
+
     #macroscopeNotification {
       display: none;
-      background-color: #ffc107;
-      color: black;
-      text-align: center;
-      border-radius: 2px;
-      padding: 10px;
+      min-width: 250px;
+      background-color: #4CAF50;
+      color: #fff;
+      text-align: left;
+      border-radius: 4px;
+      padding: 16px;
       position: fixed;
-      top: 0; /* Topmost right corner */
-      right: 0; /* Rightmost */
-      z-index: 2;
-      margin: 20px; /* Space from the edges */
-      min-width: 300px; /* Minimum width */
-      word-wrap: break-word; /* Wrap text */
-    }
-    /* Animation placeholder */
-    #animation {
-      display: none;
-      text-align: center;
-      padding: 20px;
-      background-color: white;
+      z-index: 1;
+      right: 30px;
+      top: 0; /* Positioned at the topmost right corner */
+      font-size: 17px;
+      white-space: normal; /* Allows wrapping */
+      max-width: 300px; /* Maximum width for the notification */
     }
   </style>
 </head>
 <body>
 
-  <h1>Generate CSV</h1> <!-- Updated heading -->
+  <h1>Generate CSV</h1>
 
-  <!-- Application dropdown -->
   <label for="appDropdown">Application:</label>
-  <select id="appDropdown">
-    <!-- Options will be loaded dynamically -->
-  </select>
+  <select id="appDropdown"></select>
 
-  <!-- Generate CSV button -->
-  <button id="generateCsvButton" onclick="generateReport()">Generate CSV</button> <!-- Updated button text -->
+  <button id="generateCsvButton" onclick="generateReport()">Generate CSV</button>
 
   <p id="loading">Loading applications, please wait...</p>
   
   <div id="statusMessage"></div>
 
-  <!-- CSV Upload Section -->
   <div id="csvUploadSection">
     <h2>Upload CSV</h2>
     <label for="csvUpload">Upload CSV:</label>
@@ -101,24 +119,23 @@
     <button onclick="handleCsvUpload()">Upload File</button>
   </div>
 
-  <!-- Placeholder for animation during report generation -->
-  <div id="animation">Generating CSV...</div>
+  <div id="loadingAnimation">
+    <div class="loading-animation"></div>
+    <p>Generating Report...</p> <!-- Changed here to reflect your request -->
+  </div>
 
-  <!-- Toast Notification -->
-  <div id="toast">Report Generated: <a href="#" id="reportLink" style="color: #4CAF50;">Link</a><br>Refresh the page for a new report.</div>
-
-  <!-- Macroscope Notification -->
-  <div id="macroscopeNotification">Macroscope sometimes takes time to give back the report. If the report is large, it may take time to download. Please wait for the download to start. Thank you.</div>
+  <div id="toast"></div>
+  
+  <div id="macroscopeNotification"></div> <!-- Macroscope Notification -->
 
   <script>
     let teamName, appName, date, month, year;
 
-    // Function to load applications into the dropdown
     function loadApplications() {
-      document.getElementById('loading').style.display = 'block'; // Show loading message
+      document.getElementById('loading').style.display = 'block';
       
       google.script.run.withSuccessHandler(function(applications) {
-        document.getElementById('loading').style.display = 'none'; // Hide loading message
+        document.getElementById('loading').style.display = 'none';
 
         let dropdown = document.getElementById('appDropdown');
         
@@ -134,14 +151,13 @@
             engagementId: app.engagementId,
             name: app.name,
             team: app.team
-          }); // Store appID, engagementID, application name, and team name
-          option.text = app.name; // Application name as display text
+          });
+          option.text = app.name;
           dropdown.add(option);
         });
       }).getApplications();
     }
 
-    // Function to generate the report and provide status updates
     function generateReport() {
       let selectedValue = document.getElementById('appDropdown').value;
       let statusMessage = document.getElementById('statusMessage');
@@ -155,42 +171,36 @@
       let selectedIDs = JSON.parse(selectedValue);
       let appId = selectedIDs.appId;
       let engagementId = selectedIDs.engagementId;
-      appName = selectedIDs.name; // Application name
-      teamName = selectedIDs.team; // Team name
+      appName = selectedIDs.name;
+      teamName = selectedIDs.team;
 
-      // Show a loading message while generating the report
-      statusMessage.innerText = "Generating report, please wait...";
+      statusMessage.innerText = "Generating CSV, please wait...";
       statusMessage.style.color = "blue";
-      document.getElementById('animation').innerText = "Generating CSV..."; // Set animation text
-      document.getElementById('animation').style.display = 'block'; // Show animation
 
-      // Run the Apps Script function to generate the report
+      document.getElementById('loadingAnimation').style.display = 'block';
+
       google.script.run.withSuccessHandler(function(downloadUrl) {
-        // Get the current date
         let today = new Date();
         date = today.getDate();
         month = today.getMonth() + 1;
         year = today.getFullYear();
 
-        // Trigger the download of the report
         const anchor = document.createElement('a');
         anchor.href = downloadUrl;
-        anchor.download = `Report-${teamName}-${appName}-${date}-${month}-${year}.csv`; // Customize the download filename
+        anchor.download = `Report-${teamName}-${appName}-${date}-${month}-${year}.csv`;
         document.body.appendChild(anchor);
         anchor.click();
         document.body.removeChild(anchor);
 
-        // Hide the status message once the report is generated
         statusMessage.innerText = "";
-        document.getElementById('animation').style.display = 'none'; // Hide animation after download
 
-        // Show the CSV upload section after download
+        document.getElementById('loadingAnimation').style.display = 'none';
         document.getElementById('csvUploadSection').style.display = 'block';
         
+        showMacroscopeToast();
       }).generateCSV(appId, engagementId);
     }
 
-    // Function to handle CSV upload
     function handleCsvUpload() {
       let fileInput = document.getElementById('csvUpload');
       let file = fileInput.files[0];
@@ -204,13 +214,10 @@
       reader.onload = function(e) {
         let csvData = e.target.result;
 
-        // Show the animation during CSV upload processing
-        document.getElementById('animation').innerText = "Generating Report..."; // Set animation text
-        document.getElementById('animation').style.display = 'block'; // Show animation
+        showAnimation();
 
-        // Call the Apps Script function to process the CSV data
         google.script.run.withSuccessHandler(function(sheetUrl) {
-          document.getElementById('animation').style.display = 'none'; // Hide animation
+          hideAnimation();
           showToast(`Report Generated: <a href="${sheetUrl}" target="_blank" style="color: #4CAF50;">Link</a><br>Refresh the page for a new report.`);
         }).uploadFiles(csvData, teamName, appName, date, month, year);
       };
@@ -218,14 +225,40 @@
       reader.readAsText(file);
     }
 
-    // Function to show the toast notification
     function showToast(message) {
       let toast = document.getElementById("toast");
       toast.innerHTML = message;
       toast.style.display = "block";
     }
 
-    // Load the applications when the page loads
+    function showMacroscopeToast() {
+      let macroscopeNotification = document.getElementById("macroscopeNotification");
+      macroscopeNotification.innerText = "Macroscope sometimes takes time to give back a report. If the report is big, it may take time to download. Please wait for the download to start. Thank you.";
+      macroscopeNotification.style.display = "block";
+
+      setTimeout(function() {
+        hideMacroscopeToast();
+      }, 8000); // Change to 8 seconds
+    }
+
+    function hideMacroscopeToast() {
+      let macroscopeNotification = document.getElementById("macroscopeNotification");
+      macroscopeNotification.style.display = "none";
+    }
+
+    function showAnimation() {
+      document.getElementById('loadingAnimation').style.display = 'block';
+    }
+
+    function hideAnimation() {
+      document.getElementById('loadingAnimation').style.display = 'none';
+    }
+
+    function hideToast() {
+      let toast = document.getElementById("toast");
+      toast.style.display = "none";
+    }
+
     document.addEventListener('DOMContentLoaded', loadApplications);
   </script>
 
