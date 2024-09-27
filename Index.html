@@ -69,36 +69,39 @@
     }
     #loadingAnimation {
       display: none;
-      width: 100px;
-      height: 100px;
-      margin: 0 auto;
+      text-align: center;
+      margin: 20px auto;
       position: relative;
-      perspective: 1000px;
     }
-    .cube {
-      width: 100px;
-      height: 100px;
+    .loading-text {
+      font-size: 24px;
+      color: #4CAF50;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      position: relative;
+      animation: loadingAnimation 3s infinite;
+    }
+    .loading-text::before,
+    .loading-text::after {
+      content: 'Loading';
       position: absolute;
-      transform-style: preserve-3d;
-      transform: rotateX(45deg) rotateY(45deg);
-      animation: rotate 1.5s infinite linear;
+      top: 0;
+      left: 0;
+      right: 0;
+      color: rgba(76, 175, 80, 0.5);
+      transform: translateZ(-1px);
     }
-    .cube div {
-      position: absolute;
-      width: 100px;
-      height: 100px;
-      background: rgba(0, 150, 136, 0.8);
-      border: 2px solid #4CAF50;
+    .loading-text::after {
+      color: rgba(76, 175, 80, 0.25);
+      transform: translateZ(-2px);
     }
-    .cube .front  { transform: translateZ(50px); }
-    .cube .back   { transform: rotateY(180deg) translateZ(50px); }
-    .cube .left   { transform: rotateY(-90deg) translateZ(50px); }
-    .cube .right  { transform: rotateY(90deg) translateZ(50px); }
-    .cube .top    { transform: rotateX(90deg) translateZ(50px); }
-    .cube .bottom { transform: rotateX(-90deg) translateZ(50px); }
-    @keyframes rotate {
-      from { transform: rotateX(45deg) rotateY(45deg); }
-      to   { transform: rotateX(45deg) rotateY(405deg); }
+    @keyframes loadingAnimation {
+      0%, 100% {
+        transform: rotateY(0deg);
+      }
+      50% {
+        transform: rotateY(180deg);
+      }
     }
   </style>
 </head>
@@ -129,14 +132,7 @@
 
   <!-- Placeholder for animation during report generation -->
   <div id="loadingAnimation">
-    <div class="cube">
-      <div class="front"></div>
-      <div class="back"></div>
-      <div class="left"></div>
-      <div class="right"></div>
-      <div class="top"></div>
-      <div class="bottom"></div>
-    </div>
+    <div class="loading-text">Loading</div>
   </div>
 
   <!-- Toast Notification -->
@@ -199,7 +195,7 @@
       statusMessage.innerText = "Generating CSV, please wait...";
       statusMessage.style.color = "blue";
 
-      // Show the 3D loading animation
+      // Show the 3D loading text animation
       document.getElementById('loadingAnimation').style.display = 'block';
 
       // Show the download notification toast
