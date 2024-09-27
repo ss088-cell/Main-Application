@@ -42,22 +42,6 @@
       margin-top: 20px;
     }
 
-    #toast {
-      display: none;
-      min-width: 250px;
-      background-color: #333;
-      color: #fff;
-      text-align: center;
-      border-radius: 2px;
-      padding: 16px;
-      position: fixed;
-      z-index: 1;
-      right: 30px;
-      top: 30px;
-      font-size: 17px;
-      white-space: pre-line;
-    }
-
     #loadingAnimation {
       display: none;
       text-align: center;
@@ -81,6 +65,22 @@
       100% { transform: rotate(360deg); }
     }
 
+    #toast {
+      display: none;
+      min-width: 250px;
+      background-color: #333;
+      color: #fff;
+      text-align: center;
+      border-radius: 2px;
+      padding: 16px;
+      position: fixed;
+      z-index: 1;
+      right: 30px;
+      top: 30px;
+      font-size: 17px;
+      white-space: pre-line;
+    }
+
     #macroscopeNotification {
       display: none;
       min-width: 250px;
@@ -92,7 +92,7 @@
       position: fixed;
       z-index: 1;
       right: 30px;
-      top: 70px; /* Moved up to be more towards the top right */
+      top: 0; /* Positioned at the topmost right corner */
       font-size: 17px;
       white-space: normal; /* Allows wrapping */
       max-width: 300px; /* Maximum width for the notification */
@@ -238,7 +238,7 @@
 
       setTimeout(function() {
         hideMacroscopeToast();
-      }, 20000); // Change to 20 seconds
+      }, 8000); // Change to 8 seconds
     }
 
     function hideMacroscopeToast() {
