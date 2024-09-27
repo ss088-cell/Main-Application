@@ -67,6 +67,39 @@
       font-size: 15px;
       line-height: 1.5;
     }
+    #loadingAnimation {
+      display: none;
+      width: 100px;
+      height: 100px;
+      margin: 0 auto;
+      position: relative;
+      perspective: 1000px;
+    }
+    .cube {
+      width: 100px;
+      height: 100px;
+      position: absolute;
+      transform-style: preserve-3d;
+      transform: rotateX(45deg) rotateY(45deg);
+      animation: rotate 1.5s infinite linear;
+    }
+    .cube div {
+      position: absolute;
+      width: 100px;
+      height: 100px;
+      background: rgba(0, 150, 136, 0.8);
+      border: 2px solid #4CAF50;
+    }
+    .cube .front  { transform: translateZ(50px); }
+    .cube .back   { transform: rotateY(180deg) translateZ(50px); }
+    .cube .left   { transform: rotateY(-90deg) translateZ(50px); }
+    .cube .right  { transform: rotateY(90deg) translateZ(50px); }
+    .cube .top    { transform: rotateX(90deg) translateZ(50px); }
+    .cube .bottom { transform: rotateX(-90deg) translateZ(50px); }
+    @keyframes rotate {
+      from { transform: rotateX(45deg) rotateY(45deg); }
+      to   { transform: rotateX(45deg) rotateY(405deg); }
+    }
   </style>
 </head>
 <body>
@@ -95,7 +128,16 @@
   </div>
 
   <!-- Placeholder for animation during report generation -->
-  <div id="animation">Generating report...</div>
+  <div id="loadingAnimation">
+    <div class="cube">
+      <div class="front"></div>
+      <div class="back"></div>
+      <div class="left"></div>
+      <div class="right"></div>
+      <div class="top"></div>
+      <div class="bottom"></div>
+    </div>
+  </div>
 
   <!-- Toast Notification -->
   <div id="toast">Report Generated: <a href="#" id="reportLink" style="color: #4CAF50;">Link</a><br>Refresh the page for a new report.</div>
@@ -154,8 +196,11 @@
       teamName = selectedIDs.team; // Team name
 
       // Show a loading message while generating the report
-      statusMessage.innerText = "Generating report, please wait...";
+      statusMessage.innerText = "Generating CSV, please wait...";
       statusMessage.style.color = "blue";
+
+      // Show the 3D loading animation
+      document.getElementById('loadingAnimation').style.display = 'block';
 
       // Show the download notification toast
       document.getElementById('downloadToast').style.display = "block";
@@ -178,6 +223,9 @@
 
         // Hide the status message once the report is generated
         statusMessage.innerText = "";
+
+        // Hide the 3D loading animation
+        document.getElementById('loadingAnimation').style.display = 'none';
 
         // Hide the download toast after a brief time
         setTimeout(() => {
@@ -209,34 +257,26 @@
 
         // Call the Apps Script function to process the CSV data
         google.script.run.withSuccessHandler(function(sheetUrl) {
+          document.getElementById('statusMessage').innerText = "CSV Uploaded Successfully!";
+          document.getElementById('statusMessage').style.color = "green";
           hideAnimation();
-          showToast(`Report Generated: <a href="${sheetUrl}" target="_blank" style="color: #4CAF50;">Link</a><br>Refresh the page for a new report.`);
-        }).uploadFiles(csvData, teamName, appName, date, month, year);
+        }).uploadCSV(csvData, teamName, appName, date, month, year);
       };
-
       reader.readAsText(file);
     }
 
-    // Function to show the toast notification
-    function showToast(message) {
-      let toast = document.getElementById("toast");
-      toast.innerHTML = message;
-      toast.style.display = "block";
-    }
-
-    // Function to show the animation
+    // Function to show the 3D loading animation
     function showAnimation() {
-      document.getElementById('animation').style.display = 'block';
+      document.getElementById('loadingAnimation').style.display = 'block';
     }
 
-    // Function to hide the animation
+    // Function to hide the 3D loading animation
     function hideAnimation() {
-      document.getElementById('animation').style.display = 'none';
+      document.getElementById('loadingAnimation').style.display = 'none';
     }
 
-    // Load the applications when the page loads
-    document.addEventListener('DOMContentLoaded', loadApplications);
+    // Load applications when the page is loaded
+    window.onload = loadApplications;
   </script>
-
 </body>
 </html>
