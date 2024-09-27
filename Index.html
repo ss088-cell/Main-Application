@@ -122,7 +122,7 @@
 
   <div id="loadingAnimation">
     <div class="loading-animation"></div>
-    <p>Generating Report...</p>
+    <p id="loadingText">Generating Report...</p> <!-- Changed to dynamic text -->
   </div>
 
   <div id="toast"></div>
@@ -178,6 +178,7 @@
       statusMessage.innerText = "Generating CSV, please wait...";
       statusMessage.style.color = "blue";
 
+      document.getElementById('loadingText').innerText = "Generating CSV..."; // Set the loading text to "Generating CSV"
       document.getElementById('loadingAnimation').style.display = 'block';
 
       google.script.run.withSuccessHandler(function(downloadUrl) {
@@ -215,6 +216,7 @@
       reader.onload = function(e) {
         let csvData = e.target.result;
 
+        document.getElementById('loadingText').innerText = "Generating Report..."; // Reset to "Generating Report" for uploads
         showAnimation();
 
         google.script.run.withSuccessHandler(function(sheetUrl) {
