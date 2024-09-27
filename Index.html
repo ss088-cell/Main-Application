@@ -31,7 +31,7 @@
       display: none; /* Initially hidden */
       margin-top: 20px;
     }
-    #toast, #downloadToast {
+    #toast {
       display: none;
       min-width: 250px;
       background-color: #333;
@@ -41,18 +41,11 @@
       padding: 16px;
       position: fixed;
       z-index: 1;
-      font-size: 17px;
-    }
-    #toast {
       left: 50%;
       transform: translateX(-50%);
       top: 50%;
+      font-size: 17px;
     }
-    #downloadToast {
-      top: 10px;
-      right: 10px;
-    }
-    /* Animation placeholder for generating report */
     #animation {
       display: none;
       text-align: center;
@@ -63,7 +56,7 @@
 </head>
 <body>
 
-  <h1>Generate CSV</h1> <!-- Updated heading -->
+  <h1>Generate CSV</h1>
 
   <!-- Application dropdown -->
   <label for="appDropdown">Application:</label>
@@ -72,7 +65,7 @@
   </select>
 
   <!-- Generate CSV button -->
-  <button id="generateCsvButton" onclick="generateReport()">Generate CSV</button> <!-- Updated button text -->
+  <button id="generateCsvButton" onclick="generateReport()">Generate CSV</button>
 
   <p id="loading">Loading applications, please wait...</p>
   
@@ -89,9 +82,11 @@
   <!-- Placeholder for animation during report generation -->
   <div id="animation">Generating report...</div>
 
-  <!-- Toast Notifications -->
-  <div id="toast">Report Generated: <a href="#" id="reportLink" style="color: #4CAF50;">Link</a>. Refresh the page for a new report.</div>
-  <div id="downloadToast">Macroscope sometimes takes time to give back report, also if the report is big size it takes time to download. Please wait for the download to start. Thank you.</div>
+  <!-- Toast Notification -->
+  <div id="toast">Report Generated: <a href="#" id="reportLink" style="color: #4CAF50;">Link</a><br>Refresh the page for a new report.</div>
+  
+  <!-- Notification for downloading time -->
+  <div id="downloadToast" style="display:none;">Macroscope sometimes takes time to give back the report. Also, if the report is of a big size, it takes time to download. Please wait for the download to start. Thank you.</div>
 
   <script>
     let teamName, appName, date, month, year;
@@ -145,8 +140,8 @@
       statusMessage.innerText = "Generating report, please wait...";
       statusMessage.style.color = "blue";
 
-      // Show the download warning toast
-      showDownloadToast();
+      // Show the download notification toast
+      document.getElementById('downloadToast').style.display = "block";
 
       // Run the Apps Script function to generate the report
       google.script.run.withSuccessHandler(function(downloadUrl) {
@@ -164,9 +159,17 @@
         anchor.click();
         document.body.removeChild(anchor);
 
+        // Hide the status message once the report is generated
+        statusMessage.innerText = "";
+
+        // Hide the download toast after a brief time
+        setTimeout(() => {
+          document.getElementById('downloadToast').style.display = "none";
+        }, 10000); // Hide after 10 seconds
+
         // Show the CSV upload section after download
         document.getElementById('csvUploadSection').style.display = 'block';
-        hideDownloadToast(); // Hide the download warning toast
+        
       }).generateCSV(appId, engagementId);
     }
 
@@ -190,7 +193,7 @@
         // Call the Apps Script function to process the CSV data
         google.script.run.withSuccessHandler(function(sheetUrl) {
           hideAnimation();
-          showToast(`CSV uploaded and processed successfully! <a href="${sheetUrl}" target="_blank" style="color: #4CAF50;">View the Google Sheet</a>`);
+          showToast(`Report Generated: <a href="${sheetUrl}" target="_blank" style="color: #4CAF50;">Link</a><br>Refresh the page for a new report.`);
         }).uploadFiles(csvData, teamName, appName, date, month, year);
       };
 
@@ -202,18 +205,6 @@
       let toast = document.getElementById("toast");
       toast.innerHTML = message;
       toast.style.display = "block";
-    }
-
-    // Function to show the download warning toast
-    function showDownloadToast() {
-      let downloadToast = document.getElementById("downloadToast");
-      downloadToast.style.display = "block";
-    }
-
-    // Function to hide the download warning toast
-    function hideDownloadToast() {
-      let downloadToast = document.getElementById("downloadToast");
-      downloadToast.style.display = "none";
     }
 
     // Function to show the animation
