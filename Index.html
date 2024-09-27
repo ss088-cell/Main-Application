@@ -19,8 +19,7 @@
       margin: 10px 0;
       border-radius: 4px;
       border: 1px solid #ccc;
-      max-width: 400px; /* Set a maximum width for dropdowns and buttons */
-      width: 100%; /* Keep it responsive */
+      width: calc(100% - 24px); /* Adjust width for padding */
       transition: transform 0.2s ease-in-out;
     }
 
@@ -98,11 +97,22 @@
       white-space: normal; /* Allows wrapping */
       max-width: 300px; /* Maximum width for the notification */
     }
+
+    #searchInput {
+      width: calc(100% - 24px); /* Adjust width for padding */
+      padding: 10px;
+      margin-bottom: 10px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+    }
   </style>
 </head>
 <body>
 
   <h1>Generate CSV</h1>
+
+  <label for="searchInput">Search Application:</label>
+  <input type="text" id="searchInput" placeholder="Type to search..." onkeyup="filterApplications()">
 
   <label for="appDropdown">Application:</label>
   <select id="appDropdown"></select>
@@ -157,6 +167,17 @@
           dropdown.add(option);
         });
       }).getApplications();
+    }
+
+    function filterApplications() {
+      const searchInput = document.getElementById("searchInput").value.toLowerCase();
+      const dropdown = document.getElementById("appDropdown");
+      const options = dropdown.options;
+
+      for (let i = 0; i < options.length; i++) {
+        const option = options[i];
+        option.style.display = option.text.toLowerCase().includes(searchInput) ? "block" : "none";
+      }
     }
 
     function generateReport() {
