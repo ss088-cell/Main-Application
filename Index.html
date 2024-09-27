@@ -121,8 +121,7 @@
   </div>
 
   <div id="loadingAnimation">
-    <div class="loading-animation"></div>
-    <p id="loadingText">Generating Report...</p> <!-- Changed to dynamic text -->
+    <div class="loading-animation"></div> <!-- Removed the text here -->
   </div>
 
   <div id="toast"></div>
@@ -175,10 +174,8 @@
       appName = selectedIDs.name;
       teamName = selectedIDs.team;
 
-      statusMessage.innerText = "Generating CSV, please wait...";
-      statusMessage.style.color = "blue";
-
-      document.getElementById('loadingText').innerText = "Generating CSV..."; // Set the loading text to "Generating CSV"
+      // Clear the status message and show the loading animation without any text
+      statusMessage.innerText = "";
       document.getElementById('loadingAnimation').style.display = 'block';
 
       google.script.run.withSuccessHandler(function(downloadUrl) {
@@ -193,8 +190,6 @@
         document.body.appendChild(anchor);
         anchor.click();
         document.body.removeChild(anchor);
-
-        statusMessage.innerText = "";
 
         document.getElementById('loadingAnimation').style.display = 'none';
         document.getElementById('csvUploadSection').style.display = 'block';
@@ -216,7 +211,6 @@
       reader.onload = function(e) {
         let csvData = e.target.result;
 
-        document.getElementById('loadingText').innerText = "Generating Report..."; // Reset to "Generating Report" for uploads
         showAnimation();
 
         google.script.run.withSuccessHandler(function(sheetUrl) {
