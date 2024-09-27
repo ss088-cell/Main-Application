@@ -7,6 +7,7 @@
       font-family: Arial, sans-serif;
       background-color: #f4f7f6;
       padding: 20px;
+      position: relative;
     }
     h1 {
       color: #4CAF50;
@@ -28,12 +29,14 @@
       margin-top: 20px;
     }
     #csvUploadSection {
-      display: none; /* Initially hidden */
+      display: none;
       margin-top: 20px;
     }
-    .toast {
+    /* Toast Styles */
+    #toast {
       visibility: hidden;
       min-width: 250px;
+      margin-left: -125px;
       background-color: #333;
       color: #fff;
       text-align: center;
@@ -44,19 +47,27 @@
       left: 50%;
       top: 50%;
       transform: translate(-50%, -50%);
+      white-space: nowrap;
     }
-    .toast a {
-      color: #4CAF50;
-      text-decoration: underline;
-    }
-    .toast.show {
+    #toast.show {
       visibility: visible;
+    }
+    #extraMessage {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background-color: #444;
+      color: #fff;
+      padding: 10px;
+      border-radius: 4px;
+      font-size: 14px;
+      display: none;
     }
   </style>
 </head>
 <body>
 
-  <h1>Generate CSV</h1> <!-- Updated heading -->
+  <h1>Generate CSV</h1>
 
   <!-- Application dropdown -->
   <label for="appDropdown">Application:</label>
@@ -65,7 +76,7 @@
   </select>
 
   <!-- Generate CSV button -->
-  <button id="generateCsvButton" onclick="generateReport()">Generate CSV</button> <!-- Updated button text -->
+  <button id="generateCsvButton" onclick="generateReport()">Generate CSV</button>
 
   <p id="loading">Loading applications, please wait...</p>
   
@@ -79,28 +90,23 @@
     <button onclick="handleCsvUpload()">Upload File</button>
   </div>
 
-  <!-- Toast Notification -->
-  <div id="toast" class="toast">
-    <span id="toastMessage"></span>
-  </div>
+  <!-- Toast notification -->
+  <div id="toast">Report Generated: <a id="reportLink" href="#" target="_blank">Link to report</a><br>Refresh the page for new report</div>
+  <div id="extraMessage">Macroscope sometimes takes time to give back report. Your report will be downloaded soon.</div>
 
   <script>
     let teamName, appName, date, month, year;
 
-    // Function to load applications into the dropdown
     function loadApplications() {
-      document.getElementById('loading').style.display = 'block'; // Show loading message
+      document.getElementById('loading').style.display = 'block';
       
       google.script.run.withSuccessHandler(function(applications) {
-        document.getElementById('loading').style.display = 'none'; // Hide loading message
-
+        document.getElementById('loading').style.display = 'none';
         let dropdown = document.getElementById('appDropdown');
-        
         if (applications.length === 0) {
           document.getElementById('statusMessage').innerText = "No applications found!";
           return;
         }
-        
         applications.forEach(function(app) {
           let option = document.createElement('option');
           option.value = JSON.stringify({
@@ -108,14 +114,13 @@
             engagementId: app.engagementId,
             name: app.name,
             team: app.team
-          }); // Store appID, engagementID, application name, and team name
-          option.text = app.name; // Application name as display text
+          });
+          option.text = app.name;
           dropdown.add(option);
         });
       }).getApplications();
     }
 
-    // Function to generate the report and provide status updates
     function generateReport() {
       let selectedValue = document.getElementById('appDropdown').value;
       let statusMessage = document.getElementById('statusMessage');
@@ -129,28 +134,33 @@
       let selectedIDs = JSON.parse(selectedValue);
       let appId = selectedIDs.appId;
       let engagementId = selectedIDs.engagementId;
-      appName = selectedIDs.name; // Application name
-      teamName = selectedIDs.team; // Team name
+      appName = selectedIDs.name;
+      teamName = selectedIDs.team;
 
-      // Show a loading message while generating the report
       statusMessage.innerText = "Generating report, please wait...";
       statusMessage.style.color = "blue";
 
-      // Run the Apps Script function to generate the report
+      // Show the extra message
+      document.getElementById('extraMessage').style.display = 'block';
+
       google.script.run.withSuccessHandler(function(downloadUrl) {
-        // Get the current date
         let today = new Date();
         date = today.getDate();
         month = today.getMonth() + 1;
         year = today.getFullYear();
 
+        const reportName = `Macroscope Scan ${teamName} ${appName} - ${date}-${month}-${year}`;
+
         // Trigger the download of the report
         const anchor = document.createElement('a');
         anchor.href = downloadUrl;
-        anchor.download = `Report-${teamName}-${appName}-${date}-${month}-${year}.csv`; // Customize the download filename
+        anchor.download = `Report-${teamName}-${appName}-${date}-${month}-${year}.csv`;
         document.body.appendChild(anchor);
         anchor.click();
         document.body.removeChild(anchor);
+
+        // Hide the extra message
+        document.getElementById('extraMessage').style.display = 'none';
 
         // Show the CSV upload section after download
         document.getElementById('csvUploadSection').style.display = 'block';
@@ -158,7 +168,6 @@
       }).generateCSV(appId, engagementId);
     }
 
-    // Function to handle CSV upload
     function handleCsvUpload() {
       let fileInput = document.getElementById('csvUpload');
       let file = fileInput.files[0];
@@ -172,27 +181,23 @@
       reader.onload = function(e) {
         let csvData = e.target.result;
 
-        // Call the Apps Script function to process the CSV data
         google.script.run.withSuccessHandler(function(sheetUrl) {
-          showToast(`Report Generated: <a href="${sheetUrl}" target="_blank">Link</a><br>Refresh the page for new report`);
+          // Show toast notification
+          document.body.style.backgroundColor = 'white';
+          let toast = document.getElementById('toast');
+          toast.className = "show";
+          document.getElementById('reportLink').href = sheetUrl;
         }).uploadFiles(csvData, teamName, appName, date, month, year);
       };
-
       reader.readAsText(file);
     }
 
-    // Function to show the toast notification
-    function showToast(message) {
-      const toast = document.getElementById('toast');
-      document.getElementById('toastMessage').innerHTML = message;
-      toast.className = "toast show";
-    }
+    document.getElementById('csvUpload').addEventListener('change', function() {
+      document.getElementById('extraMessage').style.display = 'none';
+    });
 
-    // Load the applications when the page loads
     document.addEventListener('DOMContentLoaded', loadApplications);
   </script>
 
 </body>
 </html>
-
-
