@@ -121,7 +121,7 @@
 
   <div id="loadingAnimation">
     <div class="loading-animation"></div>
-    <!-- Removed "Generating CSV..." text -->
+    <p>Generating CSV...</p> <!-- Default animation text -->
   </div>
 
   <div id="toast"></div>
@@ -174,11 +174,11 @@
       appName = selectedIDs.name;
       teamName = selectedIDs.team;
 
-      // Remove this line to not show "Generating CSV, please wait..."
-      // statusMessage.innerText = "Generating CSV, please wait...";
+      statusMessage.innerText = "Generating CSV, please wait...";
       statusMessage.style.color = "blue";
 
       document.getElementById('loadingAnimation').style.display = 'block';
+      document.querySelector('#loadingAnimation p').innerText = 'Generating CSV...'; // Updated animation text
 
       google.script.run.withSuccessHandler(function(downloadUrl) {
         let today = new Date();
@@ -216,6 +216,7 @@
         let csvData = e.target.result;
 
         showAnimation();
+        document.querySelector('#loadingAnimation p').innerText = 'Generating Report...'; // Updated animation text for upload
 
         google.script.run.withSuccessHandler(function(sheetUrl) {
           hideAnimation();
@@ -239,7 +240,7 @@
 
       setTimeout(function() {
         hideMacroscopeToast();
-      }, 8000); // Change to 8000 milliseconds (8 seconds)
+      }, 8000); // Change to 8 seconds
     }
 
     function hideMacroscopeToast() {
@@ -248,14 +249,19 @@
     }
 
     function showAnimation() {
-      document.getElementById("loadingAnimation").style.display = "block";
+      document.getElementById('loadingAnimation').style.display = 'block';
     }
 
     function hideAnimation() {
-      document.getElementById("loadingAnimation").style.display = "none";
+      document.getElementById('loadingAnimation').style.display = 'none';
     }
 
-    window.onload = loadApplications;
+    function hideToast() {
+      let toast = document.getElementById("toast");
+      toast.style.display = "none";
+    }
+
+    document.addEventListener('DOMContentLoaded', loadApplications);
   </script>
 
 </body>
