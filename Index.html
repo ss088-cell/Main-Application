@@ -19,7 +19,8 @@
       margin: 10px 0;
       border-radius: 4px;
       border: 1px solid #ccc;
-      width: 100%;
+      max-width: 400px; /* Set a maximum width for dropdowns and buttons */
+      width: 100%; /* Keep it responsive */
       transition: transform 0.2s ease-in-out;
     }
 
@@ -121,7 +122,7 @@
 
   <div id="loadingAnimation">
     <div class="loading-animation"></div>
-    <p>Generating CSV...</p> <!-- Default animation text -->
+    <p>Generating Report...</p>
   </div>
 
   <div id="toast"></div>
@@ -174,10 +175,10 @@
       appName = selectedIDs.name;
       teamName = selectedIDs.team;
 
-      // Removed status message text
-      statusMessage.innerText = "";
+      statusMessage.innerText = "Generating CSV, please wait...";
+      statusMessage.style.color = "blue";
+
       document.getElementById('loadingAnimation').style.display = 'block';
-      document.querySelector('#loadingAnimation p').innerText = 'Generating CSV...'; // Updated animation text
 
       google.script.run.withSuccessHandler(function(downloadUrl) {
         let today = new Date();
@@ -215,7 +216,6 @@
         let csvData = e.target.result;
 
         showAnimation();
-        document.querySelector('#loadingAnimation p').innerText = 'Generating Report...'; // Updated animation text for upload
 
         google.script.run.withSuccessHandler(function(sheetUrl) {
           hideAnimation();
