@@ -31,10 +31,9 @@
       display: none; /* Initially hidden */
       margin-top: 20px;
     }
-    .toast {
+    #toast {
       visibility: hidden;
       min-width: 250px;
-      margin-left: -125px;
       background-color: #333;
       color: #fff;
       text-align: center;
@@ -43,42 +42,49 @@
       position: fixed;
       z-index: 1;
       left: 50%;
+      transform: translateX(-50%);
       bottom: 30px;
       font-size: 17px;
-      white-space: nowrap;
     }
-    .toast.show {
+    #toast.show {
       visibility: visible;
-      -webkit-animation: fadein 0.5s, fadeout 0.5s 2.5s;
       animation: fadein 0.5s, fadeout 0.5s 2.5s;
     }
-    #backgroundOverlay {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background-color: white;
-      z-index: 9998;
+    @keyframes fadein {
+      from {bottom: 0; opacity: 0;} 
+      to {bottom: 30px; opacity: 1;}
     }
-    #smallNotification {
+    @keyframes fadeout {
+      from {bottom: 30px; opacity: 1;} 
+      to {bottom: 0; opacity: 0;}
+    }
+    /* Animation placeholder for generating report */
+    #animation {
       display: none;
-      position: fixed;
-      top: 10px;
-      right: 10px;
-      background-color: #444;
+      text-align: center;
+      padding: 20px;
+      background-color: white;
+    }
+    #smallToast {
+      visibility: hidden;
+      min-width: 250px;
+      background-color: #333;
       color: #fff;
-      padding: 10px;
-      border-radius: 5px;
-      z-index: 10000;
+      text-align: center;
+      border-radius: 2px;
+      padding: 16px;
+      position: fixed;
+      z-index: 1;
+      right: 10px;
+      top: 10px;
       font-size: 14px;
+    }
+    #smallToast.show {
+      visibility: visible;
     }
   </style>
 </head>
 <body>
-
-  <div id="backgroundOverlay"></div> <!-- Overlay for white background -->
 
   <h1>Generate CSV</h1> <!-- Updated heading -->
 
@@ -103,7 +109,14 @@
     <button onclick="handleCsvUpload()">Upload File</button>
   </div>
 
-  <div id="smallNotification">Macroscope sometimes takes time to give back report. Your report will be downloaded soon.</div>
+  <!-- Placeholder for animation during report generation -->
+  <div id="animation">Generating report...</div>
+
+  <!-- Toast Notification -->
+  <div id="toast">Report Generated: <a href="#" id="reportLink" style="color: #4CAF50;">Link</a>. Refresh the page for a new report.</div>
+
+  <!-- Small Toast Notification -->
+  <div id="smallToast">Macroscope sometimes takes time to give back report. Your report will be downloaded soon.</div>
 
   <script>
     let teamName, appName, date, month, year;
@@ -157,8 +170,8 @@
       statusMessage.innerText = "Generating report, please wait...";
       statusMessage.style.color = "blue";
 
-      // Show the small notification in the top right corner
-      document.getElementById('smallNotification').style.display = 'block';
+      // Show the small toast on the upper right corner
+      showSmallToast();
 
       // Run the Apps Script function to generate the report
       google.script.run.withSuccessHandler(function(downloadUrl) {
@@ -176,9 +189,16 @@
         anchor.click();
         document.body.removeChild(anchor);
 
-        // Remove the small notification and show the CSV upload section
-        document.getElementById('smallNotification').style.display = 'none';
+        // Show the CSV upload section after download
         document.getElementById('csvUploadSection').style.display = 'block';
+
+        // Show the generating report animation
+        showAnimation();
+
+        // After animation, show the report generated toast
+        setTimeout(() => {
+          showToast(`Report Generated: <a href="${downloadUrl}" id="reportLink" style="color: #4CAF50;">Link</a>`);
+        }, 2000);
 
       }).generateCSV(appId, engagementId);
     }
@@ -197,30 +217,46 @@
       reader.onload = function(e) {
         let csvData = e.target.result;
 
-        // Show background overlay (plain white background)
-        document.getElementById('backgroundOverlay').style.display = 'block';
-
         // Call the Apps Script function to process the CSV data
         google.script.run.withSuccessHandler(function(sheetUrl) {
-          showToast(`Report Generated: <a href="${sheetUrl}" target="_blank" style="color: yellow;">Link</a><br>Refresh the page for new report.`);
+          showToast(`CSV uploaded and processed successfully! <a href="${sheetUrl}" target="_blank" style="color: #4CAF50;">View the Google Sheet</a>`);
         }).uploadFiles(csvData, teamName, appName, date, month, year);
       };
 
       reader.readAsText(file);
     }
 
-    // Function to show toast notification
+    // Function to show the toast notification
     function showToast(message) {
-      let toast = document.createElement('div');
-      toast.className = 'toast';
+      let toast = document.getElementById("toast");
       toast.innerHTML = message;
-      document.body.appendChild(toast);
+      toast.className = "show";
 
-      // Center the toast
-      toast.style.visibility = "visible";
-      toast.style.left = "50%";
-      toast.style.bottom = "50%";
-      toast.style.transform = "translate(-50%, 50%)";
+      // Remove the small toast once the main toast is shown
+      hideSmallToast();
+
+      // Make the UI background white when toast is visible
+      document.body.style.backgroundColor = "white";
+    }
+
+    // Function to show small toast on the upper right corner
+    function showSmallToast() {
+      let smallToast = document.getElementById("smallToast");
+      smallToast.className = "show";
+    }
+
+    // Function to hide the small toast
+    function hideSmallToast() {
+      let smallToast = document.getElementById("smallToast");
+      smallToast.className = "";
+    }
+
+    // Function to show the animation
+    function showAnimation() {
+      document.getElementById('animation').style.display = 'block';
+      setTimeout(() => {
+        document.getElementById('animation').style.display = 'none';
+      }, 2000); // Show animation for 2 seconds
     }
 
     // Load the applications when the page loads
