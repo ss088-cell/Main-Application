@@ -5,7 +5,7 @@
   <style>
     body {
       font-family: Arial, sans-serif;
-      background-color: #e0f7fa; /* Changed background color */
+      background-color: #e3f2fd;
       padding: 20px;
     }
 
@@ -20,12 +20,11 @@
       border-radius: 4px;
       border: 1px solid #ccc;
       width: 100%;
-      transition: all 0.3s ease-in-out; /* Animation added */
+      transition: transform 0.2s ease-in-out;
     }
 
     select:hover, button:hover, input:hover {
-      transform: scale(1.05); /* Hover effect */
-      box-shadow: 0 0 10px rgba(0, 0, 0, 0.2); /* Shadow effect */
+      transform: scale(1.05);
     }
 
     #loading {
@@ -39,54 +38,47 @@
     }
 
     #csvUploadSection {
-      display: none; /* Initially hidden */
+      display: none;
       margin-top: 20px;
     }
 
     #toast {
       display: none;
       min-width: 250px;
-      max-width: 400px;
       background-color: #333;
       color: #fff;
       text-align: center;
-      border-radius: 4px;
+      border-radius: 2px;
       padding: 16px;
       position: fixed;
       z-index: 1;
-      right: 20px;
-      top: 20px;
+      right: 30px;
+      top: 30px;
       font-size: 17px;
-      word-wrap: break-word; /* Wrap long text */
-    }
-
-    /* Animation placeholder for generating report */
-    #animation {
-      display: none;
-      text-align: center;
-      padding: 20px;
-      background-color: white;
-    }
-
-    /* 3D loading animation */
-    @keyframes loadingAnimation {
-      0% {
-        transform: rotateX(0);
-      }
-      50% {
-        transform: rotateX(180deg);
-      }
-      100% {
-        transform: rotateX(360deg);
-      }
+      white-space: pre-line;
     }
 
     #loadingAnimation {
-      display: inline-block;
-      margin-top: 20px;
-      font-size: 20px;
+      display: none;
+      text-align: center;
+      padding: 20px;
       color: #4CAF50;
-      animation: loadingAnimation 2s infinite;
+      font-size: 18px;
+    }
+
+    .loading-animation {
+      width: 50px;
+      height: 50px;
+      margin: 0 auto;
+      border: 5px solid #f3f3f3;
+      border-radius: 50%;
+      border-top: 5px solid #4CAF50;
+      animation: spin 2s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
     }
   </style>
 </head>
@@ -94,20 +86,15 @@
 
   <h1>Generate CSV</h1>
 
-  <!-- Application dropdown -->
   <label for="appDropdown">Application:</label>
-  <select id="appDropdown">
-    <!-- Options will be loaded dynamically -->
-  </select>
+  <select id="appDropdown"></select>
 
-  <!-- Generate CSV button -->
   <button id="generateCsvButton" onclick="generateReport()">Generate CSV</button>
 
   <p id="loading">Loading applications, please wait...</p>
-
+  
   <div id="statusMessage"></div>
 
-  <!-- CSV Upload Section -->
   <div id="csvUploadSection">
     <h2>Upload CSV</h2>
     <label for="csvUpload">Upload CSV:</label>
@@ -115,20 +102,19 @@
     <button onclick="handleCsvUpload()">Upload File</button>
   </div>
 
-  <!-- Placeholder for animation during report generation -->
-  <div id="animation">
-    <div id="loadingAnimation">Loading...</div>
+  <div id="loadingAnimation">
+    <div class="loading-animation"></div>
+    <p>Generating CSV...</p>
   </div>
 
-  <!-- Toast Notification -->
-  <div id="toast">Report Generated: <a href="#" id="reportLink" style="color: #4CAF50;">Link</a><br>Refresh the page for a new report.</div>
+  <div id="toast"></div>
 
   <script>
     let teamName, appName, date, month, year;
 
     function loadApplications() {
       document.getElementById('loading').style.display = 'block';
-
+      
       google.script.run.withSuccessHandler(function(applications) {
         document.getElementById('loading').style.display = 'none';
 
@@ -171,7 +157,8 @@
 
       statusMessage.innerText = "Generating CSV, please wait...";
       statusMessage.style.color = "blue";
-      showLoadingAnimation();
+
+      document.getElementById('loadingAnimation').style.display = 'block';
 
       google.script.run.withSuccessHandler(function(downloadUrl) {
         let today = new Date();
@@ -187,8 +174,11 @@
         document.body.removeChild(anchor);
 
         statusMessage.innerText = "";
+
+        document.getElementById('loadingAnimation').style.display = 'none';
         document.getElementById('csvUploadSection').style.display = 'block';
-        hideLoadingAnimation();
+        
+        showMacroscopeToast();
       }).generateCSV(appId, engagementId);
     }
 
@@ -204,10 +194,11 @@
       let reader = new FileReader();
       reader.onload = function(e) {
         let csvData = e.target.result;
-        showLoadingAnimation();
+
+        showAnimation();
 
         google.script.run.withSuccessHandler(function(sheetUrl) {
-          hideLoadingAnimation();
+          hideAnimation();
           showToast(`Report Generated: <a href="${sheetUrl}" target="_blank" style="color: #4CAF50;">Link</a><br>Refresh the page for a new report.`);
         }).uploadFiles(csvData, teamName, appName, date, month, year);
       };
@@ -219,17 +210,26 @@
       let toast = document.getElementById("toast");
       toast.innerHTML = message;
       toast.style.display = "block";
+    }
+
+    function showMacroscopeToast() {
+      showToast("Macroscope sometimes takes time to give back a report. If the report is big, it may take time to download. Please wait for the download to start. Thank you.");
       setTimeout(function() {
-        toast.style.display = "none";
-      }, 5000);
+        hideToast();
+      }, 40000);
     }
 
-    function showLoadingAnimation() {
-      document.getElementById('animation').style.display = 'block';
+    function showAnimation() {
+      document.getElementById('loadingAnimation').style.display = 'block';
     }
 
-    function hideLoadingAnimation() {
-      document.getElementById('animation').style.display = 'none';
+    function hideAnimation() {
+      document.getElementById('loadingAnimation').style.display = 'none';
+    }
+
+    function hideToast() {
+      let toast = document.getElementById("toast");
+      toast.style.display = "none";
     }
 
     document.addEventListener('DOMContentLoaded', loadApplications);
