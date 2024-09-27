@@ -121,7 +121,8 @@
   </div>
 
   <div id="loadingAnimation">
-    <div class="loading-animation"></div> <!-- Removed the text here -->
+    <div class="loading-animation"></div>
+    <p id="loadingText"></p> <!-- Dynamic text for animation -->
   </div>
 
   <div id="toast"></div>
@@ -174,9 +175,9 @@
       appName = selectedIDs.name;
       teamName = selectedIDs.team;
 
-      // Clear the status message and show the loading animation without any text
-      statusMessage.innerText = "";
+      // Show loading animation with 'Generating CSV'
       document.getElementById('loadingAnimation').style.display = 'block';
+      document.getElementById('loadingText').innerText = 'Generating CSV'; // Update the loading text
 
       google.script.run.withSuccessHandler(function(downloadUrl) {
         let today = new Date();
@@ -190,6 +191,8 @@
         document.body.appendChild(anchor);
         anchor.click();
         document.body.removeChild(anchor);
+
+        statusMessage.innerText = "";
 
         document.getElementById('loadingAnimation').style.display = 'none';
         document.getElementById('csvUploadSection').style.display = 'block';
@@ -211,7 +214,8 @@
       reader.onload = function(e) {
         let csvData = e.target.result;
 
-        showAnimation();
+        // Show loading animation with 'Generating Report'
+        showAnimation('Generating Report');
 
         google.script.run.withSuccessHandler(function(sheetUrl) {
           hideAnimation();
@@ -243,17 +247,13 @@
       macroscopeNotification.style.display = "none";
     }
 
-    function showAnimation() {
+    function showAnimation(text) {
       document.getElementById('loadingAnimation').style.display = 'block';
+      document.getElementById('loadingText').innerText = text; // Dynamic animation text
     }
 
     function hideAnimation() {
       document.getElementById('loadingAnimation').style.display = 'none';
-    }
-
-    function hideToast() {
-      let toast = document.getElementById("toast");
-      toast.style.display = "none";
     }
 
     document.addEventListener('DOMContentLoaded', loadApplications);
