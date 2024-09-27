@@ -84,7 +84,7 @@
   <div id="animation">Generating report...</div>
 
   <!-- Toast Notification -->
-  <div id="toast">Report Generated: <a href="#" id="reportLink" style="color: #4CAF50;">Link</a>. Refresh the page for a new report.</div>
+  <div id="toast">Report Generated: <a href="#" id="reportLink" style="color: #4CAF50;">Link</a><br>Refresh the page for a new report.</div>
 
   <script>
     let teamName, appName, date, month, year;
@@ -154,12 +154,12 @@
         anchor.click();
         document.body.removeChild(anchor);
 
-        // Clear the status message
+        // Hide the status message once the report is generated
         statusMessage.innerText = "";
 
         // Show the CSV upload section after download
         document.getElementById('csvUploadSection').style.display = 'block';
-
+        
       }).generateCSV(appId, engagementId);
     }
 
@@ -183,7 +183,7 @@
         // Call the Apps Script function to process the CSV data
         google.script.run.withSuccessHandler(function(sheetUrl) {
           hideAnimation();
-          showToast(`CSV uploaded and processed successfully! <a href="${sheetUrl}" target="_blank" style="color: #4CAF50;">View the Google Sheet</a>`);
+          showToast(`Report Generated: <a href="${sheetUrl}" target="_blank" style="color: #4CAF50;">Link</a><br>Refresh the page for a new report.`);
         }).uploadFiles(csvData, teamName, appName, date, month, year);
       };
 
