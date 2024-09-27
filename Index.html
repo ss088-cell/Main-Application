@@ -31,83 +31,45 @@
       display: none; /* Initially hidden */
       margin-top: 20px;
     }
-    #toast {
-      display: none;
-      min-width: 250px;
-      background-color: #333;
-      color: #fff;
-      text-align: center;
-      border-radius: 2px;
-      padding: 16px;
-      position: fixed;
-      z-index: 1;
-      left: 50%;
-      transform: translateX(-50%);
-      top: 50%;
-      font-size: 17px;
-    }
-    #animation {
-      display: none;
-      text-align: center;
-      padding: 20px;
-      background-color: white;
-    }
+    /* Toast Notification */
     #downloadToast {
       display: none;
-      width: 300px;
-      background-color: #333;
-      color: #fff;
-      text-align: left;
-      border-radius: 8px;
-      padding: 16px;
       position: fixed;
-      z-index: 1;
       top: 20px;
       right: 20px;
-      font-size: 15px;
-      line-height: 1.5;
+      background-color: #333;
+      color: #fff;
+      padding: 16px;
+      border-radius: 5px;
+      width: 300px;
+      text-align: center;
+      font-size: 14px;
+      z-index: 1000;
     }
+    /* 3D loading text animation */
     #loadingAnimation {
       display: none;
-      text-align: center;
-      margin: 20px auto;
-      position: relative;
-    }
-    .loading-text {
       font-size: 24px;
+      font-weight: bold;
       color: #4CAF50;
-      text-transform: uppercase;
-      letter-spacing: 2px;
-      position: relative;
-      animation: loadingAnimation 3s infinite;
+      text-align: center;
+      margin-top: 20px;
+      perspective: 1000px;
     }
-    .loading-text::before,
-    .loading-text::after {
-      content: 'Loading';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      color: rgba(76, 175, 80, 0.5);
-      transform: translateZ(-1px);
+    #loadingText {
+      display: inline-block;
+      animation: rotate 2s infinite linear;
+      transform-origin: center;
     }
-    .loading-text::after {
-      color: rgba(76, 175, 80, 0.25);
-      transform: translateZ(-2px);
-    }
-    @keyframes loadingAnimation {
-      0%, 100% {
-        transform: rotateY(0deg);
-      }
-      50% {
-        transform: rotateY(180deg);
-      }
+    @keyframes rotate {
+      0% { transform: rotateY(0); }
+      100% { transform: rotateY(360deg); }
     }
   </style>
 </head>
 <body>
 
-  <h1>Generate CSV</h1>
+  <h1>Generate CSV</h1> <!-- Updated heading -->
 
   <!-- Application dropdown -->
   <label for="appDropdown">Application:</label>
@@ -116,7 +78,7 @@
   </select>
 
   <!-- Generate CSV button -->
-  <button id="generateCsvButton" onclick="generateReport()">Generate CSV</button>
+  <button id="generateCsvButton" onclick="generateReport()">Generate CSV</button> <!-- Updated button text -->
 
   <p id="loading">Loading applications, please wait...</p>
   
@@ -130,149 +92,139 @@
     <button onclick="handleCsvUpload()">Upload File</button>
   </div>
 
-  <!-- Placeholder for animation during report generation -->
+  <!-- 3D Loading Text Animation -->
   <div id="loadingAnimation">
-    <div class="loading-text">Loading</div>
+    <span id="loadingText">Loading...</span>
   </div>
 
   <!-- Toast Notification -->
-  <div id="toast">Report Generated: <a href="#" id="reportLink" style="color: #4CAF50;">Link</a><br>Refresh the page for a new report.</div>
-  
-  <!-- Notification for downloading time -->
-  <div id="downloadToast">
-    Macroscope sometimes takes time to give back the report. Also, if the report is of a big size, it takes time to download. Please wait for the download to start. Thank you.
-  </div>
+  <div id="downloadToast">Macroscope sometimes takes time to give back report, also if the report is big in size, it takes time to download. Please wait for the download to start. Thank you.</div>
 
   <script>
     let teamName, appName, date, month, year;
 
     // Function to load applications into the dropdown
     function loadApplications() {
-      document.getElementById('loading').style.display = 'block'; // Show loading message
-      
-      google.script.run.withSuccessHandler(function(applications) {
-        document.getElementById('loading').style.display = 'none'; // Hide loading message
+        document.getElementById('loading').style.display = 'block'; // Show loading message
+        
+        google.script.run.withSuccessHandler(function(applications) {
+            document.getElementById('loading').style.display = 'none'; // Hide loading message
 
-        let dropdown = document.getElementById('appDropdown');
-        
-        if (applications.length === 0) {
-          document.getElementById('statusMessage').innerText = "No applications found!";
-          return;
-        }
-        
-        applications.forEach(function(app) {
-          let option = document.createElement('option');
-          option.value = JSON.stringify({
-            appId: app.appId, 
-            engagementId: app.engagementId,
-            name: app.name,
-            team: app.team
-          }); // Store appID, engagementID, application name, and team name
-          option.text = app.name; // Application name as display text
-          dropdown.add(option);
-        });
-      }).getApplications();
+            let dropdown = document.getElementById('appDropdown');
+            
+            if (applications.length === 0) {
+                document.getElementById('statusMessage').innerText = "No applications found!";
+                return;
+            }
+            
+            applications.forEach(function(app) {
+                let option = document.createElement('option');
+                option.value = JSON.stringify({
+                    appId: app.appId, 
+                    engagementId: app.engagementId,
+                    name: app.name,
+                    team: app.team
+                }); // Store appID, engagementID, application name, and team name
+                option.text = app.name; // Application name as display text
+                dropdown.add(option);
+            });
+        }).getApplications();
     }
 
     // Function to generate the report and provide status updates
     function generateReport() {
-      let selectedValue = document.getElementById('appDropdown').value;
-      let statusMessage = document.getElementById('statusMessage');
+        let selectedValue = document.getElementById('appDropdown').value;
+        let statusMessage = document.getElementById('statusMessage');
 
-      if (!selectedValue) {
-        statusMessage.innerText = "Please select an application!";
-        statusMessage.style.color = "red";
-        return;
-      }
+        if (!selectedValue) {
+            statusMessage.innerText = "Please select an application!";
+            statusMessage.style.color = "red";
+            return;
+        }
 
-      let selectedIDs = JSON.parse(selectedValue);
-      let appId = selectedIDs.appId;
-      let engagementId = selectedIDs.engagementId;
-      appName = selectedIDs.name; // Application name
-      teamName = selectedIDs.team; // Team name
+        let selectedIDs = JSON.parse(selectedValue);
+        let appId = selectedIDs.appId;
+        let engagementId = selectedIDs.engagementId;
+        appName = selectedIDs.name; // Application name
+        teamName = selectedIDs.team; // Team name
 
-      // Show a loading message while generating the report
-      statusMessage.innerText = "Generating CSV, please wait...";
-      statusMessage.style.color = "blue";
+        // Show a loading message while generating the report
+        statusMessage.innerText = "Generating CSV, please wait...";
+        statusMessage.style.color = "blue";
 
-      // Show the 3D loading text animation
-      document.getElementById('loadingAnimation').style.display = 'block';
+        // Show the 3D loading text animation
+        document.getElementById('loadingAnimation').style.display = 'block';
 
-      // Show the download notification toast
-      document.getElementById('downloadToast').style.display = "block";
+        // Show the download notification toast
+        document.getElementById('downloadToast').style.display = "block";
 
-      // Run the Apps Script function to generate the report
-      google.script.run.withSuccessHandler(function(downloadUrl) {
-        // Get the current date
-        let today = new Date();
-        date = today.getDate();
-        month = today.getMonth() + 1;
-        year = today.getFullYear();
+        // Run the Apps Script function to generate the report
+        google.script.run.withSuccessHandler(function(downloadUrl) {
+            // Get the current date
+            let today = new Date();
+            date = today.getDate();
+            month = today.getMonth() + 1;
+            year = today.getFullYear();
 
-        // Trigger the download of the report
-        const anchor = document.createElement('a');
-        anchor.href = downloadUrl;
-        anchor.download = `Report-${teamName}-${appName}-${date}-${month}-${year}.csv`; // Customize the download filename
-        document.body.appendChild(anchor);
-        anchor.click();
-        document.body.removeChild(anchor);
+            // Trigger the download of the report
+            const anchor = document.createElement('a');
+            anchor.href = downloadUrl;
+            anchor.download = `Report-${teamName}-${appName}-${date}-${month}-${year}.csv`; // Customize the download filename
+            document.body.appendChild(anchor);
+            anchor.click();
+            document.body.removeChild(anchor);
 
-        // Hide the status message once the report is generated
-        statusMessage.innerText = "";
+            // Hide the status message once the report is generated
+            statusMessage.innerText = "";
 
-        // Hide the 3D loading animation
-        document.getElementById('loadingAnimation').style.display = 'none';
+            // Hide the 3D loading text animation
+            document.getElementById('loadingAnimation').style.display = 'none';
 
-        // Hide the download toast after a brief time
-        setTimeout(() => {
-          document.getElementById('downloadToast').style.display = "none";
-        }, 10000); // Hide after 10 seconds
-
-        // Show the CSV upload section after download
-        document.getElementById('csvUploadSection').style.display = 'block';
-        
-      }).generateCSV(appId, engagementId);
+            // Show the CSV upload section after download
+            document.getElementById('csvUploadSection').style.display = 'block';
+            
+        }).generateCSV(appId, engagementId);
     }
 
     // Function to handle CSV upload
     function handleCsvUpload() {
-      let fileInput = document.getElementById('csvUpload');
-      let file = fileInput.files[0];
-      if (!file) {
-        document.getElementById('statusMessage').innerText = "Please select a CSV file to upload!";
-        document.getElementById('statusMessage').style.color = "red";
-        return;
-      }
+        let fileInput = document.getElementById('csvUpload');
+        let file = fileInput.files[0];
+        if (!file) {
+            document.getElementById('statusMessage').innerText = "Please select a CSV file to upload!";
+            document.getElementById('statusMessage').style.color = "red";
+            return;
+        }
 
-      let reader = new FileReader();
-      reader.onload = function(e) {
-        let csvData = e.target.result;
+        let reader = new FileReader();
+        reader.onload = function(e) {
+            let csvData = e.target.result;
 
-        // Show the animation during CSV upload processing
-        showAnimation();
+            // Show the 3D loading text animation during CSV upload processing
+            document.getElementById('loadingAnimation').style.display = 'block';
 
-        // Call the Apps Script function to process the CSV data
-        google.script.run.withSuccessHandler(function(sheetUrl) {
-          document.getElementById('statusMessage').innerText = "CSV Uploaded Successfully!";
-          document.getElementById('statusMessage').style.color = "green";
-          hideAnimation();
-        }).uploadCSV(csvData, teamName, appName, date, month, year);
-      };
-      reader.readAsText(file);
+            // Call the Apps Script function to process the CSV data
+            google.script.run.withSuccessHandler(function(sheetUrl) {
+                // Hide the 3D loading text animation
+                document.getElementById('loadingAnimation').style.display = 'none';
+
+                showToast(`Report Generated: <a href="${sheetUrl}" target="_blank" style="color: #4CAF50;">Link</a><br>Refresh the page for a new report.`);
+            }).uploadFiles(csvData, teamName, appName, date, month, year);
+        };
+
+        reader.readAsText(file);
     }
 
-    // Function to show the 3D loading animation
-    function showAnimation() {
-      document.getElementById('loadingAnimation').style.display = 'block';
+    // Function to show the toast notification
+    function showToast(message) {
+        let toast = document.getElementById("downloadToast");
+        toast.innerHTML = message;
+        toast.style.display = "block";
     }
 
-    // Function to hide the 3D loading animation
-    function hideAnimation() {
-      document.getElementById('loadingAnimation').style.display = 'none';
-    }
-
-    // Load applications when the page is loaded
-    window.onload = loadApplications;
+    // Load the applications when the page loads
+    document.addEventListener('DOMContentLoaded', loadApplications);
   </script>
+
 </body>
 </html>
