@@ -121,7 +121,7 @@
 
   <div id="loadingAnimation">
     <div class="loading-animation"></div>
-    <p>Generating Report...</p> <!-- Changed here to reflect your request -->
+    <!-- Removed "Generating CSV..." text -->
   </div>
 
   <div id="toast"></div>
@@ -174,7 +174,8 @@
       appName = selectedIDs.name;
       teamName = selectedIDs.team;
 
-      statusMessage.innerText = "Generating CSV, please wait...";
+      // Remove this line to not show "Generating CSV, please wait..."
+      // statusMessage.innerText = "Generating CSV, please wait...";
       statusMessage.style.color = "blue";
 
       document.getElementById('loadingAnimation').style.display = 'block';
@@ -238,7 +239,7 @@
 
       setTimeout(function() {
         hideMacroscopeToast();
-      }, 8000); // Change to 8 seconds
+      }, 8000); // Change to 8000 milliseconds (8 seconds)
     }
 
     function hideMacroscopeToast() {
@@ -247,19 +248,14 @@
     }
 
     function showAnimation() {
-      document.getElementById('loadingAnimation').style.display = 'block';
+      document.getElementById("loadingAnimation").style.display = "block";
     }
 
     function hideAnimation() {
-      document.getElementById('loadingAnimation').style.display = 'none';
+      document.getElementById("loadingAnimation").style.display = "none";
     }
 
-    function hideToast() {
-      let toast = document.getElementById("toast");
-      toast.style.display = "none";
-    }
-
-    document.addEventListener('DOMContentLoaded', loadApplications);
+    window.onload = loadApplications;
   </script>
 
 </body>
