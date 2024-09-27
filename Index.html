@@ -5,12 +5,14 @@
   <style>
     body {
       font-family: Arial, sans-serif;
-      background-color: #f4f7f6;
+      background-color: #e0f7fa; /* Changed background color */
       padding: 20px;
     }
+
     h1 {
       color: #4CAF50;
     }
+
     select, button, input {
       font-size: 16px;
       padding: 10px;
@@ -18,58 +20,79 @@
       border-radius: 4px;
       border: 1px solid #ccc;
       width: 100%;
+      transition: all 0.3s ease-in-out; /* Animation added */
     }
+
+    select:hover, button:hover, input:hover {
+      transform: scale(1.05); /* Hover effect */
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.2); /* Shadow effect */
+    }
+
     #loading {
       display: none;
       color: green;
     }
+
     #statusMessage {
       color: red;
       margin-top: 20px;
     }
+
     #csvUploadSection {
       display: none; /* Initially hidden */
       margin-top: 20px;
     }
-    /* Toast Notification */
-    #downloadToast {
+
+    #toast {
       display: none;
-      position: fixed;
-      top: 20px;
-      right: 20px;
+      min-width: 250px;
+      max-width: 400px;
       background-color: #333;
       color: #fff;
+      text-align: center;
+      border-radius: 4px;
       padding: 16px;
-      border-radius: 5px;
-      width: 300px;
-      text-align: center;
-      font-size: 14px;
-      z-index: 1000;
+      position: fixed;
+      z-index: 1;
+      right: 20px;
+      top: 20px;
+      font-size: 17px;
+      word-wrap: break-word; /* Wrap long text */
     }
-    /* 3D loading text animation */
-    #loadingAnimation {
+
+    /* Animation placeholder for generating report */
+    #animation {
       display: none;
-      font-size: 24px;
-      font-weight: bold;
-      color: #4CAF50;
       text-align: center;
-      margin-top: 20px;
-      perspective: 1000px;
+      padding: 20px;
+      background-color: white;
     }
-    #loadingText {
+
+    /* 3D loading animation */
+    @keyframes loadingAnimation {
+      0% {
+        transform: rotateX(0);
+      }
+      50% {
+        transform: rotateX(180deg);
+      }
+      100% {
+        transform: rotateX(360deg);
+      }
+    }
+
+    #loadingAnimation {
       display: inline-block;
-      animation: rotate 2s infinite linear;
-      transform-origin: center;
-    }
-    @keyframes rotate {
-      0% { transform: rotateY(0); }
-      100% { transform: rotateY(360deg); }
+      margin-top: 20px;
+      font-size: 20px;
+      color: #4CAF50;
+      animation: loadingAnimation 2s infinite;
     }
   </style>
 </head>
 <body>
 
-  <h1>Generate CSV</h1> <!-- Updated heading -->
+  <h1>Generate CSV</h1>
 
   <!-- Application dropdown -->
   <label for="appDropdown">Application:</label>
@@ -78,10 +101,10 @@
   </select>
 
   <!-- Generate CSV button -->
-  <button id="generateCsvButton" onclick="generateReport()">Generate CSV</button> <!-- Updated button text -->
+  <button id="generateCsvButton" onclick="generateReport()">Generate CSV</button>
 
   <p id="loading">Loading applications, please wait...</p>
-  
+
   <div id="statusMessage"></div>
 
   <!-- CSV Upload Section -->
@@ -92,137 +115,123 @@
     <button onclick="handleCsvUpload()">Upload File</button>
   </div>
 
-  <!-- 3D Loading Text Animation -->
-  <div id="loadingAnimation">
-    <span id="loadingText">Loading...</span>
+  <!-- Placeholder for animation during report generation -->
+  <div id="animation">
+    <div id="loadingAnimation">Loading...</div>
   </div>
 
   <!-- Toast Notification -->
-  <div id="downloadToast">Macroscope sometimes takes time to give back report, also if the report is big in size, it takes time to download. Please wait for the download to start. Thank you.</div>
+  <div id="toast">Report Generated: <a href="#" id="reportLink" style="color: #4CAF50;">Link</a><br>Refresh the page for a new report.</div>
 
   <script>
     let teamName, appName, date, month, year;
 
-    // Function to load applications into the dropdown
     function loadApplications() {
-        document.getElementById('loading').style.display = 'block'; // Show loading message
+      document.getElementById('loading').style.display = 'block';
+
+      google.script.run.withSuccessHandler(function(applications) {
+        document.getElementById('loading').style.display = 'none';
+
+        let dropdown = document.getElementById('appDropdown');
         
-        google.script.run.withSuccessHandler(function(applications) {
-            document.getElementById('loading').style.display = 'none'; // Hide loading message
-
-            let dropdown = document.getElementById('appDropdown');
-            
-            if (applications.length === 0) {
-                document.getElementById('statusMessage').innerText = "No applications found!";
-                return;
-            }
-            
-            applications.forEach(function(app) {
-                let option = document.createElement('option');
-                option.value = JSON.stringify({
-                    appId: app.appId, 
-                    engagementId: app.engagementId,
-                    name: app.name,
-                    team: app.team
-                }); // Store appID, engagementID, application name, and team name
-                option.text = app.name; // Application name as display text
-                dropdown.add(option);
-            });
-        }).getApplications();
+        if (applications.length === 0) {
+          document.getElementById('statusMessage').innerText = "No applications found!";
+          return;
+        }
+        
+        applications.forEach(function(app) {
+          let option = document.createElement('option');
+          option.value = JSON.stringify({
+            appId: app.appId, 
+            engagementId: app.engagementId,
+            name: app.name,
+            team: app.team
+          });
+          option.text = app.name;
+          dropdown.add(option);
+        });
+      }).getApplications();
     }
 
-    // Function to generate the report and provide status updates
     function generateReport() {
-        let selectedValue = document.getElementById('appDropdown').value;
-        let statusMessage = document.getElementById('statusMessage');
+      let selectedValue = document.getElementById('appDropdown').value;
+      let statusMessage = document.getElementById('statusMessage');
 
-        if (!selectedValue) {
-            statusMessage.innerText = "Please select an application!";
-            statusMessage.style.color = "red";
-            return;
-        }
+      if (!selectedValue) {
+        statusMessage.innerText = "Please select an application!";
+        statusMessage.style.color = "red";
+        return;
+      }
 
-        let selectedIDs = JSON.parse(selectedValue);
-        let appId = selectedIDs.appId;
-        let engagementId = selectedIDs.engagementId;
-        appName = selectedIDs.name; // Application name
-        teamName = selectedIDs.team; // Team name
+      let selectedIDs = JSON.parse(selectedValue);
+      let appId = selectedIDs.appId;
+      let engagementId = selectedIDs.engagementId;
+      appName = selectedIDs.name;
+      teamName = selectedIDs.team;
 
-        // Show a loading message while generating the report
-        statusMessage.innerText = "Generating CSV, please wait...";
-        statusMessage.style.color = "blue";
+      statusMessage.innerText = "Generating CSV, please wait...";
+      statusMessage.style.color = "blue";
+      showLoadingAnimation();
 
-        // Show the 3D loading text animation
-        document.getElementById('loadingAnimation').style.display = 'block';
+      google.script.run.withSuccessHandler(function(downloadUrl) {
+        let today = new Date();
+        date = today.getDate();
+        month = today.getMonth() + 1;
+        year = today.getFullYear();
 
-        // Show the download notification toast
-        document.getElementById('downloadToast').style.display = "block";
+        const anchor = document.createElement('a');
+        anchor.href = downloadUrl;
+        anchor.download = `Report-${teamName}-${appName}-${date}-${month}-${year}.csv`;
+        document.body.appendChild(anchor);
+        anchor.click();
+        document.body.removeChild(anchor);
 
-        // Run the Apps Script function to generate the report
-        google.script.run.withSuccessHandler(function(downloadUrl) {
-            // Get the current date
-            let today = new Date();
-            date = today.getDate();
-            month = today.getMonth() + 1;
-            year = today.getFullYear();
-
-            // Trigger the download of the report
-            const anchor = document.createElement('a');
-            anchor.href = downloadUrl;
-            anchor.download = `Report-${teamName}-${appName}-${date}-${month}-${year}.csv`; // Customize the download filename
-            document.body.appendChild(anchor);
-            anchor.click();
-            document.body.removeChild(anchor);
-
-            // Hide the status message once the report is generated
-            statusMessage.innerText = "";
-
-            // Hide the 3D loading text animation
-            document.getElementById('loadingAnimation').style.display = 'none';
-
-            // Show the CSV upload section after download
-            document.getElementById('csvUploadSection').style.display = 'block';
-            
-        }).generateCSV(appId, engagementId);
+        statusMessage.innerText = "";
+        document.getElementById('csvUploadSection').style.display = 'block';
+        hideLoadingAnimation();
+      }).generateCSV(appId, engagementId);
     }
 
-    // Function to handle CSV upload
     function handleCsvUpload() {
-        let fileInput = document.getElementById('csvUpload');
-        let file = fileInput.files[0];
-        if (!file) {
-            document.getElementById('statusMessage').innerText = "Please select a CSV file to upload!";
-            document.getElementById('statusMessage').style.color = "red";
-            return;
-        }
+      let fileInput = document.getElementById('csvUpload');
+      let file = fileInput.files[0];
+      if (!file) {
+        document.getElementById('statusMessage').innerText = "Please select a CSV file to upload!";
+        document.getElementById('statusMessage').style.color = "red";
+        return;
+      }
 
-        let reader = new FileReader();
-        reader.onload = function(e) {
-            let csvData = e.target.result;
+      let reader = new FileReader();
+      reader.onload = function(e) {
+        let csvData = e.target.result;
+        showLoadingAnimation();
 
-            // Show the 3D loading text animation during CSV upload processing
-            document.getElementById('loadingAnimation').style.display = 'block';
+        google.script.run.withSuccessHandler(function(sheetUrl) {
+          hideLoadingAnimation();
+          showToast(`Report Generated: <a href="${sheetUrl}" target="_blank" style="color: #4CAF50;">Link</a><br>Refresh the page for a new report.`);
+        }).uploadFiles(csvData, teamName, appName, date, month, year);
+      };
 
-            // Call the Apps Script function to process the CSV data
-            google.script.run.withSuccessHandler(function(sheetUrl) {
-                // Hide the 3D loading text animation
-                document.getElementById('loadingAnimation').style.display = 'none';
-
-                showToast(`Report Generated: <a href="${sheetUrl}" target="_blank" style="color: #4CAF50;">Link</a><br>Refresh the page for a new report.`);
-            }).uploadFiles(csvData, teamName, appName, date, month, year);
-        };
-
-        reader.readAsText(file);
+      reader.readAsText(file);
     }
 
-    // Function to show the toast notification
     function showToast(message) {
-        let toast = document.getElementById("downloadToast");
-        toast.innerHTML = message;
-        toast.style.display = "block";
+      let toast = document.getElementById("toast");
+      toast.innerHTML = message;
+      toast.style.display = "block";
+      setTimeout(function() {
+        toast.style.display = "none";
+      }, 5000);
     }
 
-    // Load the applications when the page loads
+    function showLoadingAnimation() {
+      document.getElementById('animation').style.display = 'block';
+    }
+
+    function hideLoadingAnimation() {
+      document.getElementById('animation').style.display = 'none';
+    }
+
     document.addEventListener('DOMContentLoaded', loadApplications);
   </script>
 
