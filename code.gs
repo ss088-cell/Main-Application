@@ -5,59 +5,92 @@ function doGet() {
 
 // Function to get the applications, IDs, and team name from the Google Sheet
 function getApplications() {
-  const sheet = SpreadsheetApp.openById('YOUR_SPREADSHEET_ID').getSheetByName('YOUR_SHEET_NAME');
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('ApplicationData');
   const data = sheet.getDataRange().getValues();
-  
-  // Assuming data starts at the 2nd row and columns A, B, C, D have appId, engagementId, name, team respectively
-  const applications = data.slice(1).map(row => ({
-    appId: row[0],
-    engagementId: row[1],
-    name: row[2],
-    team: row[3]
-  }));
+  const applications = [];
+
+  for (let i = 1; i < data.length; i++) {
+    const appId = data[i][0];
+    const engagementId = data[i][1];
+    const name = data[i][2];
+    const team = data[i][3];
+
+    if (appId && engagementId && name && team) {
+      applications.push({ appId, engagementId, name, team });
+    }
+  }
 
   return applications;
 }
 
-// Generate the CSV file, store it on Google Drive, and return the download link
-function generateCSV(appID, engagementID, appName) {
-  const downloadLink = getDownloadLink(appID, engagementID); // Get the download link using the provided IDs
+// Function to generate the CSV
+function generateCSV(appId, engagementId) {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Template');
+  const dataRange = sheet.getDataRange();
+  const data = dataRange.getValues();
 
-  // Example logic for generating CSV data based on appID and engagementID
-  const csvData = "Header1,Header2,Header3\nValue1,Value2,Value3"; // Example CSV data, replace with your logic
-
-  const fileName = appName + ".csv"; // Use appName to generate the file name
-  const file = DriveApp.createFile(fileName, csvData, MimeType.CSV);
-  const url = file.getDownloadUrl(); // This generates the download URL
-
-  return url; // Return the constructed download link
-}
-
-// Handle the uploaded CSV data, process it, and generate a report
-function uploadFiles(csvData, teamName, appName, date, month, year) {
-  const sheet = SpreadsheetApp.openById('YOUR_SPREADSHEET_ID').getSheetByName('YOUR_SHEET_NAME');
-  const csvLines = Utilities.parseCsv(csvData);
-  
-  // Clear existing content
-  sheet.clearContents();
-
-  // Write CSV data to the sheet
-  csvLines.forEach((line, index) => {
-    sheet.getRange(index + 1, 1, 1, line.length).setValues([line]);
+  const csvContent = [];
+  data.forEach(rowArray => {
+    const row = rowArray.join(",");
+    csvContent.push(row);
   });
 
-  const sheetUrl = sheet.getUrl(); // Get the URL of the Google Sheet
-  return sheetUrl;
+  const csvBlob = Utilities.newBlob(csvContent.join("\n"), 'text/csv', 'report.csv');
+  const file = DriveApp.createFile(csvBlob);
+
+  return file.getDownloadUrl();
 }
 
-// Example function to return download link - replace with your logic
-function getDownloadLink(appID, engagementID) {
-  // Logic to generate a download link based on appID and engagementID
-  return "https://example.com/download-link";
+// Function to upload the CSV and generate the report
+function uploadFiles(csvData, teamName, appName, date, month, year) {
+  const sheet = SpreadsheetApp.create(`Report-${teamName}-${appName}-${date}-${month}-${year}`);
+  const csvArray = Utilities.parseCsv(csvData);
+
+  const newSheet = sheet.getActiveSheet();
+  newSheet.getRange(1, 1, csvArray.length, csvArray[0].length).setValues(csvArray);
+
+  const url = sheet.getUrl();
+  return url;
 }
 
-// Visualize the data - example function
-function visualizeData(spreadsheetUrl) {
-  const htmlOutput = `<html><body><h1>Visualization</h1><p>Visualize data here using ${spreadsheetUrl}</p></body></html>`;
-  return htmlOutput;
+// Function to visualize the data
+function visualizeData(sheetUrl) {
+  const html = `
+    <html>
+    <head>
+      <title>Data Visualization</title>
+      <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    </head>
+    <body>
+      <h1>Data Visualization</h1>
+      <p>Visual representation of the data from the generated report.</p>
+      <canvas id="myChart" width="400" height="400"></canvas>
+      <script>
+        // Assuming some basic data for chart creation
+        const data = {
+          labels: ['Data 1', 'Data 2', 'Data 3', 'Data 4', 'Data 5'],
+          datasets: [{
+            label: 'Sample Data',
+            data: [10, 20, 30, 40, 50],
+            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+            borderColor: 'rgba(75, 192, 192, 1)',
+            borderWidth: 1
+          }]
+        };
+        
+        const config = {
+          type: 'bar',
+          data: data,
+        };
+        
+        const myChart = new Chart(
+          document.getElementById('myChart'),
+          config
+        );
+      </script>
+    </body>
+    </html>
+  `;
+  
+  return html;
 }
