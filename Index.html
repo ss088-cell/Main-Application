@@ -105,7 +105,10 @@
   <h1>Generate CSV</h1>
 
   <label for="appDropdown">Application:</label>
-  <select id="appDropdown"></select>
+  <div id="dropdownContainer">
+    <input type="text" id="searchInput" placeholder="Search applications..." style="display:none;" oninput="filterDropdown()">
+    <select id="appDropdown" onclick="toggleSearchInput()"></select>
+  </div>
 
   <button id="generateCsvButton" onclick="generateReport()">Generate CSV</button>
 
@@ -228,7 +231,6 @@
       let toast = document.getElementById("toast");
       toast.innerHTML = message;
       toast.style.display = "block";
-      // No timeout, toast will remain until the page refreshes
     }
 
     function showMacroscopeToast() {
@@ -257,6 +259,23 @@
     function hideToast() {
       let toast = document.getElementById("toast");
       toast.style.display = "none";
+    }
+
+    function toggleSearchInput() {
+      const searchInput = document.getElementById('searchInput');
+      searchInput.style.display = 'block';
+      searchInput.focus();
+    }
+
+    function filterDropdown() {
+      const input = document.getElementById('searchInput').value.toLowerCase();
+      const dropdown = document.getElementById('appDropdown');
+      const options = dropdown.options;
+
+      for (let i = 0; i < options.length; i++) {
+        const text = options[i].text.toLowerCase();
+        options[i].style.display = text.includes(input) ? '' : 'none';
+      }
     }
 
     document.addEventListener('DOMContentLoaded', loadApplications);
