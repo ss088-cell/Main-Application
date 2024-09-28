@@ -3,7 +3,101 @@
 <head>
   <base target="_top">
   <style>
-    /* Existing CSS code */
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #e3f2fd;
+      padding: 20px;
+    }
+
+    h1 {
+      color: #4CAF50;
+    }
+
+    select, button, input {
+      font-size: 16px;
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+      max-width: 400px; /* Set a maximum width for dropdowns and buttons */
+      width: 100%; /* Keep it responsive */
+      transition: transform 0.2s ease-in-out;
+    }
+
+    select:hover, button:hover, input:hover {
+      transform: scale(1.05);
+    }
+
+    #loading {
+      display: none;
+      color: green;
+    }
+
+    #statusMessage {
+      color: red;
+      margin-top: 20px;
+    }
+
+    #csvUploadSection {
+      display: none;
+      margin-top: 20px;
+    }
+
+    #loadingAnimation {
+      display: none;
+      text-align: center;
+      padding: 20px;
+      color: #4CAF50;
+      font-size: 18px;
+    }
+
+    .loading-animation {
+      width: 50px;
+      height: 50px;
+      margin: 0 auto;
+      border: 5px solid #f3f3f3;
+      border-radius: 50%;
+      border-top: 5px solid #4CAF50;
+      animation: spin 2s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    #toast {
+      display: none;
+      min-width: 250px;
+      background-color: #333;
+      color: #fff;
+      text-align: center;
+      border-radius: 2px;
+      padding: 16px;
+      position: fixed;
+      z-index: 1;
+      right: 30px;
+      top: 30px;
+      font-size: 17px;
+      white-space: pre-line;
+    }
+
+    #macroscopeNotification {
+      display: none;
+      min-width: 250px;
+      background-color: #4CAF50;
+      color: #fff;
+      text-align: left;
+      border-radius: 4px;
+      padding: 16px;
+      position: fixed;
+      z-index: 1;
+      right: 30px;
+      top: 0; /* Positioned at the topmost right corner */
+      font-size: 17px;
+      white-space: normal; /* Allows wrapping */
+      max-width: 300px; /* Maximum width for the notification */
+    }
   </style>
 </head>
 <body>
@@ -12,8 +106,8 @@
 
   <label for="appDropdown">Application:</label>
   <div style="position: relative;">
-    <input type="text" id="searchInput" onkeyup="filterDropdown()" placeholder="Search applications..." style="display:none; width: calc(100% - 20px); margin-bottom: 10px;">
-    <select id="appDropdown" onclick="toggleSearchInput()"></select>
+    <select id="appDropdown" onclick="toggleSearchInput()" onblur="resetDropdown()"></select>
+    <input type="text" id="searchInput" onkeyup="filterDropdown()" placeholder="Search applications..." style="display:none; width: calc(100% - 20px); margin-top: 10px;">
   </div>
 
   <button id="generateCsvButton" onclick="generateReport()">Generate CSV</button>
@@ -70,14 +164,8 @@
 
     function toggleSearchInput() {
       const searchInput = document.getElementById('searchInput');
-      const dropdown = document.getElementById('appDropdown');
-
-      if (searchInput.style.display === 'none') {
-        searchInput.style.display = 'block';
-        searchInput.focus();
-      }
-
-      dropdown.size = dropdown.options.length; // Expand the dropdown to show all options
+      searchInput.style.display = 'block';
+      searchInput.focus();
     }
 
     function filterDropdown() {
@@ -88,6 +176,12 @@
         const optionText = dropdown.options[i].text.toLowerCase();
         dropdown.options[i].style.display = optionText.includes(input) ? '' : 'none';
       }
+    }
+
+    function resetDropdown() {
+      const searchInput = document.getElementById('searchInput');
+      searchInput.style.display = 'none';
+      searchInput.value = ''; // Clear the search input
     }
 
     function generateReport() {
