@@ -1,5 +1,3 @@
-Index.html
-
 <!DOCTYPE html>
 <html>
 <head>
@@ -188,7 +186,7 @@ Index.html
 
         const anchor = document.createElement('a');
         anchor.href = downloadUrl;
-        anchor.download = Report-${teamName}-${appName}-${date}-${month}-${year}.csv;
+        anchor.download = `Report-${teamName}-${appName}-${date}-${month}-${year}.csv`;
         document.body.appendChild(anchor);
         anchor.click();
         document.body.removeChild(anchor);
@@ -217,7 +215,7 @@ Index.html
 
         google.script.run.withSuccessHandler(function(sheetUrl) {
           hideAnimation();
-          showToast(Report Generated: <a href="${sheetUrl}" target="_blank" style="color: #4CAF50;">Link</a><br>Refresh the page for a new report.);
+          showToast(`Report Generated: <a href="${sheetUrl}" target="_blank" style="color: #4CAF50;">Link</a><br>Refresh the page for a new report.`);
           document.getElementById('appDropdown').innerHTML = '';
           fileInput.value = ''; // Clear the file input
         }).uploadFiles(csvData, teamName, appName, date, month, year);
