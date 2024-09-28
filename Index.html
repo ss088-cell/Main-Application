@@ -108,7 +108,7 @@
   <select id="appDropdown"></select>
 
   <button id="generateCsvButton" onclick="generateReport()">Generate CSV</button>
-  
+
   <p id="loading">Loading applications, please wait...</p>
   
   <div id="statusMessage"></div>
@@ -120,106 +120,152 @@
     <button onclick="handleCsvUpload()">Upload CSV</button>
   </div>
 
-  <button id="visualizeButton" onclick="visualizeReport()">Visualize Report</button>
-
   <div id="loadingAnimation">
     <div class="loading-animation"></div>
-    <p>Generating Report...</p>
+    <p id="loadingText">Generating CSV...</p>
   </div>
 
-  <div id="toast">Toast message!</div>
-  <div id="macroscopeNotification">Macroscope Notification</div>
+  <div id="toast"></div>
+  
+  <div id="macroscopeNotification"></div> <!-- Macroscope Notification -->
 
   <script>
-    // Fetch applications on page load
-    window.onload = function() {
-      google.script.run.withSuccessHandler(populateDropdown).getApplications();
-    };
+    let teamName, appName, date, month, year;
 
-    // Populate the dropdown with applications
-    function populateDropdown(applications) {
-      const appDropdown = document.getElementById('appDropdown');
-      appDropdown.innerHTML = ''; // Clear previous options
+    function loadApplications() {
+        document.getElementById('loading').style.display = 'block';
+      
+        google.script.run.withSuccessHandler(function(applications) {
+            document.getElementById('loading').style.display = 'none';
 
-      applications.forEach(app => {
-        const option = document.createElement('option');
-        option.value = app.appId; // Use app ID for the value
-        option.textContent = app.name; // Display app name
-        appDropdown.appendChild(option);
-      });
+            let dropdown = document.getElementById('appDropdown');
+            
+            if (applications.length === 0) {
+                document.getElementById('statusMessage').innerText = "No applications found!";
+                return;
+            }
+            
+            applications.forEach(function(app) {
+                let option = document.createElement('option');
+                option.value = JSON.stringify({
+                    appId: app.appId, 
+                    engagementId: app.engagementId,
+                    name: app.name,
+                    team: app.team
+                });
+                option.text = app.name;
+                dropdown.add(option);
+            });
+        }).getApplications();
     }
 
-    // Generate report
     function generateReport() {
-      const appDropdown = document.getElementById('appDropdown');
-      const selectedApp = appDropdown.value;
-      const selectedAppName = appDropdown.options[appDropdown.selectedIndex].text; // Get selected app name
+        let selectedValue = document.getElementById('appDropdown').value;
+        let statusMessage = document.getElementById('statusMessage');
 
-      // Show loading animation
-      document.getElementById('loadingAnimation').style.display = 'block';
+        if (!selectedValue) {
+            statusMessage.innerText = "Please select an application!";
+            statusMessage.style.color = "red";
+            return;
+        }
 
-      google.script.run.withSuccessHandler(function(reportUrl) {
-        // Hide loading animation
-        document.getElementById('loadingAnimation').style.display = 'none';
-        
-        const message = `Report generated! You can download it here: ${reportUrl}`;
-        document.getElementById('statusMessage').textContent = message;
-        document.getElementById('csvUploadSection').style.display = 'block';
-        showToast(message);
-      }).generateCSV(selectedApp, "EngagementID"); // Replace with actual engagement ID
-    }
+        let selectedIDs = JSON.parse(selectedValue);
+        let appId = selectedIDs.appId;
+        let engagementId = selectedIDs.engagementId;
+        appName = selectedIDs.name;
+        teamName = selectedIDs.team;
 
-    // Handle CSV upload
-    function handleCsvUpload() {
-      const fileInput = document.getElementById('csvUpload');
-      const file = fileInput.files[0];
-
-      if (!file) {
-        alert('Please select a CSV file to upload.');
-        return;
-      }
-
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        const csvData = e.target.result;
-
-        // Show loading animation
+        document.getElementById('loadingText').innerText = "Generating CSV..."; // Set animation text
         document.getElementById('loadingAnimation').style.display = 'block';
 
-        const team = "TeamName"; // Replace with actual team name
-        const appName = "AppName"; // Replace with actual app name
-        const date = new Date().getDate();
-        const month = new Date().getMonth() + 1; // Months are 0-based
-        const year = new Date().getFullYear();
+        google.script.run.withSuccessHandler(function(downloadUrl) {
+            if (downloadUrl) {
+                let today = new Date();
+                date = today.getDate();
+                month = today.getMonth() + 1;
+                year = today.getFullYear();
 
-        google.script.run.withSuccessHandler(function(spreadsheetUrl) {
-          // Hide loading animation
-          document.getElementById('loadingAnimation').style.display = 'none';
-          const message = `CSV uploaded! You can view it here: ${spreadsheetUrl}`;
-          document.getElementById('statusMessage').textContent = message;
-          showToast(message);
-        }).uploadFiles(csvData, team, appName, date, month, year);
-      };
-      reader.readAsText(file);
+                const anchor = document.createElement('a');
+                anchor.href = downloadUrl;
+                anchor.download = `Report-${teamName}-${appName}-${date}-${month}-${year}.csv`;
+                document.body.appendChild(anchor);
+                anchor.click();
+                document.body.removeChild(anchor);
+
+                showToast("CSV file is downloading...");
+            } else {
+                showToast("Failed to generate CSV. Please try again.");
+            }
+
+            document.getElementById('loadingAnimation').style.display = 'none';
+            document.getElementById('csvUploadSection').style.display = 'block';
+            
+            showMacroscopeToast();
+        }).generateCSV(appId, engagementId);
     }
 
-    // Visualize the report data
-    function visualizeReport() {
-      const spreadsheetUrl = 'YOUR_SPREADSHEET_URL'; // Replace this with the actual spreadsheet URL from the upload function
-      google.script.run.withSuccessHandler(function(htmlContent) {
-        const newWindow = window.open();
-        newWindow.document.write(htmlContent);
-        newWindow.document.close();
-      }).visualizeData(spreadsheetUrl);
+    function handleCsvUpload() {
+        let fileInput = document.getElementById('csvUpload');
+        let file = fileInput.files[0];
+        if (!file) {
+            document.getElementById('statusMessage').innerText = "Please select a CSV file to upload!";
+            document.getElementById('statusMessage').style.color = "red";
+            return;
+        }
+
+        let reader = new FileReader();
+        reader.onload = function(e) {
+            let csvData = e.target.result;
+
+            document.getElementById('loadingText').innerText = "Uploading CSV..."; // Set animation text
+            showAnimation();
+
+            google.script.run.withSuccessHandler(function(sheetUrl) {
+                hideAnimation();
+                if (sheetUrl) {
+                    showToast(`Report Generated: <a href="${sheetUrl}" target="_blank" style="color: #4CAF50;">Link</a><br>Refresh the page for a new report.`);
+                } else {
+                    showToast("Failed to upload CSV. Please try again.");
+                }
+                document.getElementById('appDropdown').innerHTML = '';
+                fileInput.value = ''; // Clear the file input
+            }).uploadFiles(csvData, teamName, appName, date, month, year);
+        };
+
+        reader.readAsText(file);
     }
 
-    // Show toast notification
     function showToast(message) {
-      const toast = document.getElementById('toast');
-      toast.textContent = message;
-      toast.style.display = 'block';
-      setTimeout(() => { toast.style.display = 'none'; }, 3000);
+        let toast = document.getElementById("toast");
+        toast.innerHTML = message;
+        toast.style.display = "block";
+        // No timeout, toast will remain until the page refreshes
     }
+
+    function showMacroscopeToast() {
+        let macroscopeNotification = document.getElementById("macroscopeNotification");
+        macroscopeNotification.innerText = "Macroscope sometimes takes time to give back a report. If the report is large, it may take time to download. Please wait for the download to start. Thank you.";
+        macroscopeNotification.style.display = "block";
+
+        setTimeout(function() {
+            hideMacroscopeToast();
+        }, 8000); // Change to 8 seconds
+    }
+
+    function hideMacroscopeToast() {
+        let macroscopeNotification = document.getElementById("macroscopeNotification");
+        macroscopeNotification.style.display = "none";
+    }
+
+    function showAnimation() {
+        document.getElementById('loadingAnimation').style.display = 'block';
+    }
+
+    function hideAnimation() {
+        document.getElementById('loadingAnimation').style.display = 'none';
+    }
+
+    document.addEventListener('DOMContentLoaded', loadApplications);
   </script>
 
 </body>
