@@ -67,8 +67,11 @@ function uploadFiles(csvData, team, appName, date, month, year) {
   // Split CSV data into rows and columns
   const rows = Utilities.parseCsv(csvData);
 
+  // Check that there are enough columns in the CSV
+  const validRows = rows.filter(row => row.length >= 9); // Ensure at least 9 columns are present
+
   // Write the CSV data into the sheet
-  sheet.getRange(1, 1, rows.length, rows[0].length).setValues(rows);
+  sheet.getRange(1, 1, validRows.length, 9).setValues(validRows); // Ensure only valid rows are written
 
   // Return the URL of the created Google Sheet
   return spreadsheet.getUrl();
@@ -78,7 +81,7 @@ function uploadFiles(csvData, team, appName, date, month, year) {
 function visualizeData(spreadsheetUrl) {
   const spreadsheet = SpreadsheetApp.openByUrl(spreadsheetUrl);
   const sheet = spreadsheet.getActiveSheet();
-  const data = sheet.getRange("A1:Z1000").getValues(); // Adjust range as necessary
+  const data = sheet.getRange("A1:I1000").getValues(); // Adjust range as necessary for 9 columns
 
   let htmlContent = `
     <html>
@@ -105,17 +108,33 @@ function visualizeData(spreadsheetUrl) {
       </style>
     </head>
     <body>
-      <h1>Description Data from Report</h1>
+      <h1>Report Data</h1>
       <table>
         <tr>
           <th>Description</th>
+          <th>File Path</th>
+          <th>ID</th>
+          <th>Line</th>
+          <th>Mitigation</th>
+          <th>References</th>
+          <th>Severity</th>
+          <th>Title</th>
+          <th>Found By</th>
         </tr>
   `;
 
   data.forEach(row => {
-    if (row[2]) {  // Assuming Description is in the third column (index 2)
-      htmlContent += `<tr><td>${row[2]}</td></tr>`;
-    }
+    htmlContent += `<tr>
+      <td>${row[0] || ''}</td>
+      <td>${row[1] || ''}</td>
+      <td>${row[2] || ''}</td>
+      <td>${row[3] || ''}</td>
+      <td>${row[4] || ''}</td>
+      <td>${row[5] || ''}</td>
+      <td>${row[6] || ''}</td>
+      <td>${row[7] || ''}</td>
+      <td>${row[8] || ''}</td>
+    </tr>`;
   });
 
   htmlContent += `
