@@ -117,12 +117,12 @@
     <h2>Upload CSV</h2>
     <label for="csvUpload">Upload CSV:</label>
     <input type="file" id="csvUpload" accept=".csv" />
-    <button onclick="handleCsvUpload()">Upload File</button>
+    <button onclick="handleCsvUpload()">Upload CSV</button>
   </div>
 
   <div id="loadingAnimation">
     <div class="loading-animation"></div>
-    <p id="loadingText"></p> <!-- Dynamic text for animation -->
+    <p id="loadingText">Generating CSV...</p> <!-- Animation text element -->
   </div>
 
   <div id="toast"></div>
@@ -175,9 +175,10 @@
       appName = selectedIDs.name;
       teamName = selectedIDs.team;
 
-      // Show loading animation with 'Generating CSV'
+      statusMessage.innerText = "";
+
       document.getElementById('loadingAnimation').style.display = 'block';
-      document.getElementById('loadingText').innerText = 'Generating CSV'; // Update the loading text
+      document.getElementById('loadingText').innerText = "Generating CSV..."; // Display text for Generate CSV
 
       google.script.run.withSuccessHandler(function(downloadUrl) {
         let today = new Date();
@@ -191,8 +192,6 @@
         document.body.appendChild(anchor);
         anchor.click();
         document.body.removeChild(anchor);
-
-        statusMessage.innerText = "";
 
         document.getElementById('loadingAnimation').style.display = 'none';
         document.getElementById('csvUploadSection').style.display = 'block';
@@ -214,8 +213,8 @@
       reader.onload = function(e) {
         let csvData = e.target.result;
 
-        // Show loading animation with 'Generating Report'
-        showAnimation('Generating Report');
+        showAnimation();
+        document.getElementById('loadingText').innerText = "Generating Report..."; // Display text for Upload CSV
 
         google.script.run.withSuccessHandler(function(sheetUrl) {
           hideAnimation();
@@ -247,13 +246,17 @@
       macroscopeNotification.style.display = "none";
     }
 
-    function showAnimation(text) {
+    function showAnimation() {
       document.getElementById('loadingAnimation').style.display = 'block';
-      document.getElementById('loadingText').innerText = text; // Dynamic animation text
     }
 
     function hideAnimation() {
       document.getElementById('loadingAnimation').style.display = 'none';
+    }
+
+    function hideToast() {
+      let toast = document.getElementById("toast");
+      toast.style.display = "none";
     }
 
     document.addEventListener('DOMContentLoaded', loadApplications);
