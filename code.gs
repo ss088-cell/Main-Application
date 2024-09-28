@@ -5,143 +5,59 @@ function doGet() {
 
 // Function to get the applications, IDs, and team name from the Google Sheet
 function getApplications() {
-  const spreadsheetId = '1UE2fdxYGUGPFRoZtnQAbO8Tzc6T99GMAoiNhxGGwego'; // Replace with your actual spreadsheet ID
-  const spreadsheet = SpreadsheetApp.openById(spreadsheetId);
-  const sheet = spreadsheet.getSheetByName('Applications');
+  const sheet = SpreadsheetApp.openById('YOUR_SPREADSHEET_ID').getSheetByName('YOUR_SHEET_NAME');
+  const data = sheet.getDataRange().getValues();
+  
+  // Assuming data starts at the 2nd row and columns A, B, C, D have appId, engagementId, name, team respectively
+  const applications = data.slice(1).map(row => ({
+    appId: row[0],
+    engagementId: row[1],
+    name: row[2],
+    team: row[3]
+  }));
 
-  if (!sheet) {
-    Logger.log("Sheet 'Applications' not found!");
-    return [];
-  }
-
-  const lastRow = sheet.getLastRow();
-  if (lastRow < 2) {
-    Logger.log("No data in sheet beyond headers.");
-    return [];
-  }
-
-  // Get all data starting from row 2 (to skip the headers)
-  const data = sheet.getRange(2, 1, lastRow - 1, 4).getValues(); // 4 columns: Application Name, App ID, Engagement ID, Team Name
-
-  let appList = [];
-  data.forEach(row => {
-    if (row[0] && row[1] && row[2] && row[3]) {
-      appList.push({
-        name: row[0],        // Application Name
-        appId: row[1],       // App ID
-        engagementId: row[2],// Engagement ID
-        team: row[3]         // Team Name (Column D)
-      });
-    }
-  });
-  return appList;
+  return applications;
 }
 
-// Function to construct the URL with appID and engagementID and return it
-function getDownloadLink(appID, engagementID) {
-  const baseUrl = 'https://xyz.com/xyv/jdfyd/njd'; // Static part of the URL
-  const fullUrl = `${baseUrl}/${appID}/gdhgd/hjfhf/nhd/${engagementID}/hdhdb/ndhjd`; 
-  return fullUrl;
-}
-
-// Function to generate and return a download link for the CSV
-function generateCSV(appID, engagementID) {
+// Generate the CSV file, store it on Google Drive, and return the download link
+function generateCSV(appID, engagementID, appName) {
   const downloadLink = getDownloadLink(appID, engagementID); // Get the download link using the provided IDs
 
   // Example logic for generating CSV data based on appID and engagementID
   const csvData = "Header1,Header2,Header3\nValue1,Value2,Value3"; // Example CSV data, replace with your logic
 
-  const file = DriveApp.createFile('GeneratedReport.csv', csvData, MimeType.CSV);
+  const fileName = appName + ".csv"; // Use appName to generate the file name
+  const file = DriveApp.createFile(fileName, csvData, MimeType.CSV);
   const url = file.getDownloadUrl(); // This generates the download URL
 
-  return downloadLink; // Return the constructed download link
+  return url; // Return the constructed download link
 }
 
-// Function to upload and process the CSV file
-function uploadFiles(csvData, team, appName, date, month, year) {
-  // Create a new Google Sheet
-  const sheetName = `Macroscope Scan ${team} ${appName} - ${date}-${month}-${year}`;
-  const spreadsheet = SpreadsheetApp.create(sheetName);
-  const sheet = spreadsheet.getActiveSheet();
+// Handle the uploaded CSV data, process it, and generate a report
+function uploadFiles(csvData, teamName, appName, date, month, year) {
+  const sheet = SpreadsheetApp.openById('YOUR_SPREADSHEET_ID').getSheetByName('YOUR_SHEET_NAME');
+  const csvLines = Utilities.parseCsv(csvData);
+  
+  // Clear existing content
+  sheet.clearContents();
 
-  // Split CSV data into rows and columns
-  const rows = Utilities.parseCsv(csvData);
-
-  // Check that there are enough columns in the CSV
-  const validRows = rows.filter(row => row.length >= 9); // Ensure at least 9 columns are present
-
-  // Write the CSV data into the sheet
-  sheet.getRange(1, 1, validRows.length, 9).setValues(validRows); // Ensure only valid rows are written
-
-  // Return the URL of the created Google Sheet
-  return spreadsheet.getUrl();
-}
-
-// Function to visualize data from the spreadsheet
-function visualizeData(spreadsheetUrl) {
-  const spreadsheet = SpreadsheetApp.openByUrl(spreadsheetUrl);
-  const sheet = spreadsheet.getActiveSheet();
-  const data = sheet.getRange("A1:I1000").getValues(); // Adjust range as necessary for 9 columns
-
-  let htmlContent = `
-    <html>
-    <head>
-      <style>
-        body {
-          font-family: Arial, sans-serif;
-          padding: 20px;
-          background-color: #f4f4f4;
-        }
-        table {
-          width: 100%;
-          border-collapse: collapse;
-          margin-bottom: 20px;
-        }
-        th, td {
-          padding: 8px 12px;
-          border: 1px solid #ddd;
-        }
-        th {
-          background-color: #4CAF50;
-          color: white;
-        }
-      </style>
-    </head>
-    <body>
-      <h1>Report Data</h1>
-      <table>
-        <tr>
-          <th>Description</th>
-          <th>File Path</th>
-          <th>ID</th>
-          <th>Line</th>
-          <th>Mitigation</th>
-          <th>References</th>
-          <th>Severity</th>
-          <th>Title</th>
-          <th>Found By</th>
-        </tr>
-  `;
-
-  data.forEach(row => {
-    htmlContent += `<tr>
-      <td>${row[0] || ''}</td>
-      <td>${row[1] || ''}</td>
-      <td>${row[2] || ''}</td>
-      <td>${row[3] || ''}</td>
-      <td>${row[4] || ''}</td>
-      <td>${row[5] || ''}</td>
-      <td>${row[6] || ''}</td>
-      <td>${row[7] || ''}</td>
-      <td>${row[8] || ''}</td>
-    </tr>`;
+  // Write CSV data to the sheet
+  csvLines.forEach((line, index) => {
+    sheet.getRange(index + 1, 1, 1, line.length).setValues([line]);
   });
 
-  htmlContent += `
-      </table>
-    </body>
-    </html>
-  `;
+  const sheetUrl = sheet.getUrl(); // Get the URL of the Google Sheet
+  return sheetUrl;
+}
 
-  return htmlContent;
+// Example function to return download link - replace with your logic
+function getDownloadLink(appID, engagementID) {
+  // Logic to generate a download link based on appID and engagementID
+  return "https://example.com/download-link";
+}
+
+// Visualize the data - example function
+function visualizeData(spreadsheetUrl) {
+  const htmlOutput = `<html><body><h1>Visualization</h1><p>Visualize data here using ${spreadsheetUrl}</p></body></html>`;
+  return htmlOutput;
 }
