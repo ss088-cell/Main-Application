@@ -24,7 +24,7 @@ function getApplications() {
 }
 
 // Function to generate the CSV
-function generateCSV(appId, engagementId) {
+function generateCSV(appId, engagementId, appName) {
   const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Template');
   const dataRange = sheet.getDataRange();
   const data = dataRange.getValues();
@@ -35,7 +35,8 @@ function generateCSV(appId, engagementId) {
     csvContent.push(row);
   });
 
-  const csvBlob = Utilities.newBlob(csvContent.join("\n"), 'text/csv', 'report.csv');
+  // Use the application name for the CSV file name
+  const csvBlob = Utilities.newBlob(csvContent.join("\n"), 'text/csv', `${appName}.csv`);
   const file = DriveApp.createFile(csvBlob);
 
   return file.getDownloadUrl();
