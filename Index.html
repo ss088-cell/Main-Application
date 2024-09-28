@@ -1,3 +1,5 @@
+Index.html
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -105,10 +107,7 @@
   <h1>Generate CSV</h1>
 
   <label for="appDropdown">Application:</label>
-  <div style="position: relative;">
-    <select id="appDropdown" onclick="toggleSearchInput()" onblur="resetDropdown()"></select>
-    <input type="text" id="searchInput" onkeyup="filterDropdown()" placeholder="Search applications..." style="display:none; width: calc(100% - 20px); margin-top: 10px;">
-  </div>
+  <select id="appDropdown"></select>
 
   <button id="generateCsvButton" onclick="generateReport()">Generate CSV</button>
 
@@ -125,12 +124,12 @@
 
   <div id="loadingAnimation">
     <div class="loading-animation"></div>
-    <p id="loadingText">Generating Report...</p>
+    <p id="loadingText">Generating CSV...</p>
   </div>
 
   <div id="toast"></div>
   
-  <div id="macroscopeNotification"></div>
+  <div id="macroscopeNotification"></div> <!-- Macroscope Notification -->
 
   <script>
     let teamName, appName, date, month, year;
@@ -162,28 +161,6 @@
       }).getApplications();
     }
 
-    function toggleSearchInput() {
-      const searchInput = document.getElementById('searchInput');
-      searchInput.style.display = 'block';
-      searchInput.focus();
-    }
-
-    function filterDropdown() {
-      const input = document.getElementById('searchInput').value.toLowerCase();
-      const dropdown = document.getElementById('appDropdown');
-
-      for (let i = 0; i < dropdown.options.length; i++) {
-        const optionText = dropdown.options[i].text.toLowerCase();
-        dropdown.options[i].style.display = optionText.includes(input) ? '' : 'none';
-      }
-    }
-
-    function resetDropdown() {
-      const searchInput = document.getElementById('searchInput');
-      searchInput.style.display = 'none';
-      searchInput.value = ''; // Clear the search input
-    }
-
     function generateReport() {
       let selectedValue = document.getElementById('appDropdown').value;
       let statusMessage = document.getElementById('statusMessage');
@@ -200,7 +177,7 @@
       appName = selectedIDs.name;
       teamName = selectedIDs.team;
 
-      document.getElementById('loadingText').innerText = "Generating Report...";
+      document.getElementById('loadingText').innerText = "Generating CSV...";
       document.getElementById('loadingAnimation').style.display = 'block';
 
       google.script.run.withSuccessHandler(function(downloadUrl) {
@@ -211,7 +188,7 @@
 
         const anchor = document.createElement('a');
         anchor.href = downloadUrl;
-        anchor.download = `Report-${teamName}-${appName}-${date}-${month}-${year}.csv`;
+        anchor.download = Report-${teamName}-${appName}-${date}-${month}-${year}.csv;
         document.body.appendChild(anchor);
         anchor.click();
         document.body.removeChild(anchor);
@@ -240,7 +217,7 @@
 
         google.script.run.withSuccessHandler(function(sheetUrl) {
           hideAnimation();
-          showToast(`Report Generated: <a href="${sheetUrl}" target="_blank" style="color: #4CAF50;">Link</a><br>Refresh the page for a new report.`);
+          showToast(Report Generated: <a href="${sheetUrl}" target="_blank" style="color: #4CAF50;">Link</a><br>Refresh the page for a new report.);
           document.getElementById('appDropdown').innerHTML = '';
           fileInput.value = ''; // Clear the file input
         }).uploadFiles(csvData, teamName, appName, date, month, year);
@@ -253,6 +230,7 @@
       let toast = document.getElementById("toast");
       toast.innerHTML = message;
       toast.style.display = "block";
+      // No timeout, toast will remain until the page refreshes
     }
 
     function showMacroscopeToast() {
