@@ -121,31 +121,31 @@
   <h1>Generate CSV</h1>
 
   <label for="appDropdown">Application:</label>
-  <select id="appDropdown" aria-label="Application selection"></select>
+  <select id="appDropdown"></select>
 
-  <button id="generateCsvButton" aria-label="Generate CSV" onclick="generateReport()">Generate CSV</button>
+  <button id="generateCsvButton" onclick="generateReport()">Generate CSV</button>
 
   <p id="loading">Loading applications, please wait...</p>
   
-  <div id="statusMessage" aria-live="polite"></div>
+  <div id="statusMessage"></div>
 
   <div id="csvUploadSection">
     <h2>Upload CSV</h2>
     <label for="csvUpload">Upload CSV:</label>
-    <input type="file" id="csvUpload" accept=".csv" aria-label="Upload CSV File" />
+    <input type="file" id="csvUpload" accept=".csv" />
     <button onclick="handleCsvUpload()">Upload CSV</button>
   </div>
 
   <div id="loadingAnimation">
     <div class="loading-animation"></div>
-    <p id="loadingText">Generating CSV...</p> <!-- Default text -->
+    <p id="loadingText">Generating CSV...</p>
   </div>
 
-  <div id="toast" aria-live="polite"></div>
+  <div id="toast"></div>
   
   <div id="macroscopeNotification"></div> <!-- Macroscope Notification -->
 
-  <button id="visualizeButton" aria-label="Visualize Report" onclick="visualizeReport()">Visualize</button> <!-- Visualize Button -->
+  <button id="visualizeButton" onclick="visualizeReport()">Visualize</button> <!-- Visualize Button -->
 
   <script>
     let teamName, appName, date, month, year, spreadsheetUrl;
@@ -174,8 +174,6 @@
           option.text = app.name;
           dropdown.add(option);
         });
-      }).withFailureHandler(function(error) {
-        document.getElementById('statusMessage').innerText = `Error loading applications: ${error.message}`;
       }).getApplications();
     }
 
@@ -195,7 +193,7 @@
       appName = selectedIDs.name;
       teamName = selectedIDs.team;
 
-      document.getElementById('loadingText').innerText = "Generating CSV..."; // CSV generation
+      document.getElementById('loadingText').innerText = "Generating CSV...";
       document.getElementById('loadingAnimation').style.display = 'block';
 
       google.script.run.withSuccessHandler(function(downloadUrl) {
@@ -215,9 +213,6 @@
         document.getElementById('csvUploadSection').style.display = 'block';
         
         showMacroscopeToast();
-      }).withFailureHandler(function(error) {
-        statusMessage.innerText = `Error generating report: ${error.message}`;
-        document.getElementById('loadingAnimation').style.display = 'none';
       }).generateCSV(appId, engagementId);
     }
 
@@ -234,8 +229,8 @@
       reader.onload = function(e) {
         let csvData = e.target.result;
 
-        document.getElementById('loadingText').innerText = "Generating Report..."; // Update text for report generation
         showAnimation();
+        document.getElementById('loadingText').innerText = "Generating Report...";
 
         google.script.run.withSuccessHandler(function(sheetUrl) {
           hideAnimation();
@@ -244,9 +239,6 @@
           fileInput.value = ''; // Clear the file input
           spreadsheetUrl = sheetUrl;
           document.getElementById('visualizeButton').style.display = 'block'; // Show visualize button
-        }).withFailureHandler(function(error) {
-          document.getElementById('statusMessage').innerText = `Error uploading CSV: ${error.message}`;
-          hideAnimation();
         }).uploadFiles(csvData, teamName, appName, date, month, year);
       };
 
@@ -264,16 +256,11 @@
       let toast = document.getElementById("toast");
       toast.innerHTML = message;
       toast.style.display = "block";
-
-      // Auto-hide after 5 seconds
-      setTimeout(function() {
-        hideToast();
-      }, 5000);
     }
 
     function showMacroscopeToast() {
       let macroscopeNotification = document.getElementById("macroscopeNotification");
-      macroscopeNotification.innerText = "Macroscope sometimes takes time to give results for big reports. Please be patient.";
+      macroscopeNotification.innerText = "Macroscope sometimes takes time to generate large results. Please be patient.";
       macroscopeNotification.style.display = "block";
 
       setTimeout(function() {
