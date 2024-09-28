@@ -122,7 +122,7 @@
 
   <div id="loadingAnimation">
     <div class="loading-animation"></div>
-    <p id="loadingText">Generating CSV...</p> <!-- Animation text element -->
+    <p id="loadingText">Generating CSV</p>
   </div>
 
   <div id="toast"></div>
@@ -175,10 +175,11 @@
       appName = selectedIDs.name;
       teamName = selectedIDs.team;
 
-      statusMessage.innerText = "";
+      statusMessage.innerText = "Generating CSV...";
+      statusMessage.style.color = "blue";
 
       document.getElementById('loadingAnimation').style.display = 'block';
-      document.getElementById('loadingText').innerText = "Generating CSV..."; // Display text for Generate CSV
+      document.getElementById('loadingText').innerText = 'Generating CSV'; // Update animation text
 
       google.script.run.withSuccessHandler(function(downloadUrl) {
         let today = new Date();
@@ -193,6 +194,8 @@
         anchor.click();
         document.body.removeChild(anchor);
 
+        statusMessage.innerText = "";
+
         document.getElementById('loadingAnimation').style.display = 'none';
         document.getElementById('csvUploadSection').style.display = 'block';
         
@@ -203,6 +206,7 @@
     function handleCsvUpload() {
       let fileInput = document.getElementById('csvUpload');
       let file = fileInput.files[0];
+      
       if (!file) {
         document.getElementById('statusMessage').innerText = "Please select a CSV file to upload!";
         document.getElementById('statusMessage').style.color = "red";
@@ -213,16 +217,33 @@
       reader.onload = function(e) {
         let csvData = e.target.result;
 
-        showAnimation();
-        document.getElementById('loadingText').innerText = "Generating Report..."; // Display text for Upload CSV
+        showAnimation(); // Show "Generating Report..."
+        document.getElementById('loadingText').innerText = 'Generating Report'; // Update animation text
 
         google.script.run.withSuccessHandler(function(sheetUrl) {
-          hideAnimation();
+          hideAnimation(); // Hide the animation once the report is generated
+          
+          // Show the success message and link to the report
           showToast(`Report Generated: <a href="${sheetUrl}" target="_blank" style="color: #4CAF50;">Link</a><br>Refresh the page for a new report.`);
+
+          // Reset the Application dropdown and CSV file input
+          clearDropdownAndFileInput();
+
         }).uploadFiles(csvData, teamName, appName, date, month, year);
       };
 
       reader.readAsText(file);
+    }
+
+    // This function clears the Application dropdown and resets the CSV input
+    function clearDropdownAndFileInput() {
+      // Clear the Application dropdown
+      let dropdown = document.getElementById('appDropdown');
+      dropdown.innerHTML = "";  // Remove all options
+      
+      // Reset the file input for CSV
+      let fileInput = document.getElementById('csvUpload');
+      fileInput.value = "";  // Reset the file input value to clear the selected file
     }
 
     function showToast(message) {
