@@ -138,7 +138,7 @@
 
   <div id="loadingAnimation">
     <div class="loading-animation"></div>
-    <p id="loadingText">Generating CSV...</p>
+    <p id="loadingText">Generating Report...</p>
   </div>
 
   <div id="toast"></div>
@@ -193,7 +193,7 @@
       appName = selectedIDs.name;
       teamName = selectedIDs.team;
 
-      document.getElementById('loadingText').innerText = "Generating CSV...";
+      document.getElementById('loadingText').innerText = "Generating Report...";
       document.getElementById('loadingAnimation').style.display = 'block';
 
       google.script.run.withSuccessHandler(function(downloadUrl) {
@@ -204,7 +204,7 @@
 
         const anchor = document.createElement('a');
         anchor.href = downloadUrl;
-        anchor.download = `Report-${teamName}-${appName}-${date}-${month}-${year}.csv`;
+        anchor.download = `${appName}.csv`; // Use the appName for the downloaded file
         document.body.appendChild(anchor);
         anchor.click();
         document.body.removeChild(anchor);
@@ -213,7 +213,7 @@
         document.getElementById('csvUploadSection').style.display = 'block';
         
         showMacroscopeToast();
-      }).generateCSV(appId, engagementId);
+      }).generateCSV(appId, engagementId, appName); // Pass appName to the server
     }
 
     function handleCsvUpload() {
