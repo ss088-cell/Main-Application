@@ -179,23 +179,17 @@
         document.getElementById('loadingAnimation').style.display = 'block';
 
         google.script.run.withSuccessHandler(function(downloadUrl) {
-            if (downloadUrl) {
-                let today = new Date();
-                date = today.getDate();
-                month = today.getMonth() + 1;
-                year = today.getFullYear();
+            let today = new Date();
+            date = today.getDate();
+            month = today.getMonth() + 1;
+            year = today.getFullYear();
 
-                const anchor = document.createElement('a');
-                anchor.href = downloadUrl;
-                anchor.download = `Report-${teamName}-${appName}-${date}-${month}-${year}.csv`;
-                document.body.appendChild(anchor);
-                anchor.click();
-                document.body.removeChild(anchor);
-
-                showToast("CSV file is downloading...");
-            } else {
-                showToast("Failed to generate CSV. Please try again.");
-            }
+            const anchor = document.createElement('a');
+            anchor.href = downloadUrl;
+            anchor.download = `Report-${teamName}-${appName}-${date}-${month}-${year}.csv`;
+            document.body.appendChild(anchor);
+            anchor.click();
+            document.body.removeChild(anchor);
 
             document.getElementById('loadingAnimation').style.display = 'none';
             document.getElementById('csvUploadSection').style.display = 'block';
@@ -217,16 +211,12 @@
         reader.onload = function(e) {
             let csvData = e.target.result;
 
-            document.getElementById('loadingText').innerText = "Uploading CSV..."; // Set animation text
+            document.getElementById('loadingText').innerText = "Generating Report..."; // Set animation text
             showAnimation();
 
             google.script.run.withSuccessHandler(function(sheetUrl) {
                 hideAnimation();
-                if (sheetUrl) {
-                    showToast(`Report Generated: <a href="${sheetUrl}" target="_blank" style="color: #4CAF50;">Link</a><br>Refresh the page for a new report.`);
-                } else {
-                    showToast("Failed to upload CSV. Please try again.");
-                }
+                showToast(`Report Generated: <a href="${sheetUrl}" target="_blank" style="color: #4CAF50;">Link</a><br>Refresh the page for a new report.`);
                 document.getElementById('appDropdown').innerHTML = '';
                 fileInput.value = ''; // Clear the file input
             }).uploadFiles(csvData, teamName, appName, date, month, year);
@@ -244,7 +234,7 @@
 
     function showMacroscopeToast() {
         let macroscopeNotification = document.getElementById("macroscopeNotification");
-        macroscopeNotification.innerText = "Macroscope sometimes takes time to give back a report. If the report is large, it may take time to download. Please wait for the download to start. Thank you.";
+        macroscopeNotification.innerText = "Macroscope sometimes takes time to give back a report. If the report is big, it may take time to download. Please wait for the download to start. Thank you.";
         macroscopeNotification.style.display = "block";
 
         setTimeout(function() {
@@ -263,6 +253,11 @@
 
     function hideAnimation() {
         document.getElementById('loadingAnimation').style.display = 'none';
+    }
+
+    function hideToast() {
+        let toast = document.getElementById("toast");
+        toast.style.display = "none";
     }
 
     document.addEventListener('DOMContentLoaded', loadApplications);
